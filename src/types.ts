@@ -3,20 +3,22 @@ export enum TernaryTreeKind {
   ternaryTreeLeaf,
 }
 
-export type TernaryTreeList<T> =
-  | {
-      size: number;
-      kind: TernaryTreeKind.ternaryTreeBranch;
-      depth: number;
-      left: TernaryTreeList<T>;
-      middle: TernaryTreeList<T>;
-      right: TernaryTreeList<T>;
-    }
-  | {
-      size: number;
-      kind: TernaryTreeKind.ternaryTreeLeaf;
-      value: T;
-    };
+export type TernaryTreeListTheBranch<T> = {
+  size: number;
+  kind: TernaryTreeKind.ternaryTreeBranch;
+  depth: number;
+  left: TernaryTreeList<T>;
+  middle: TernaryTreeList<T>;
+  right: TernaryTreeList<T>;
+};
+
+export type TernaryTreeListTheLeaf<T> = {
+  size: number;
+  kind: TernaryTreeKind.ternaryTreeLeaf;
+  value: T;
+};
+
+export type TernaryTreeList<T> = TernaryTreeListTheBranch<T> | TernaryTreeListTheLeaf<T>;
 
 export type TernaryTreeMapKeyValuePair<K, V> = {
   k: K;
@@ -38,9 +40,7 @@ export type TernaryTreeMapTheLeaf<K, T> = {
   elements: Array<TernaryTreeMapKeyValuePair<K, T>>; // handle hash collapsing
 };
 
-export type TernaryTreeMap<K, T> =
-  | TernaryTreeMapTheBranch<K, T>
-  | TernaryTreeMapTheLeaf<K, T>;
+export type TernaryTreeMap<K, T> = TernaryTreeMapTheBranch<K, T> | TernaryTreeMapTheLeaf<K, T>;
 
 export type RefInt = {
   value: number;

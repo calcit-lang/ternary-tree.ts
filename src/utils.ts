@@ -10,9 +10,7 @@ export let roughIntPow = (x: number, times: number): number => {
   return result;
 };
 
-export let divideTernarySizes = (
-  size: number
-): { left: number; middle: number; right: number } => {
+export let divideTernarySizes = (size: number): { left: number; middle: number; right: number } => {
   if (size < 0) {
     throw new Error("Unexpected negative size");
   }
@@ -37,4 +35,29 @@ export let divideTernarySizes = (
   }
 
   return { left: leftSize, middle: middleSize, right: rightSize };
+};
+
+export function shallowCloneArray<T>(xs: Array<T>): Array<T> {
+  let ys: Array<T> = [];
+  for (let item of xs) {
+    ys.push(item);
+  }
+  return ys;
+}
+
+export let test = (name: string, cb: () => void): void => {
+  console.log("Test:", name);
+  cb();
+};
+
+export let check = (x: boolean): void => {};
+
+export let cmp = (x: any, y: any) => {
+  if (x < y) {
+    return -1;
+  }
+  if (x > y) {
+    return 1;
+  }
+  return 0;
 };

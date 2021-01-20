@@ -1,848 +1,1099 @@
+import { RefInt, TernaryTreeKind, TernaryTreeList, TernaryTreeListTheBranch } from "./types";
+import {} from "./map";
+import { divideTernarySizes, roughIntPow } from "./utils";
 
-import strformat
+// just get, will not compute recursively
+export function getDepth<T>(tree: TernaryTreeList<T>): number {
+  if (tree == null) return 0;
+  switch (tree.kind) {
+    case TernaryTreeKind.ternaryTreeLeaf:
+      return 1;
+    case TernaryTreeKind.ternaryTreeBranch:
+      return tree.depth;
+  }
+}
 
-import ternary_tree/types
-import ternary_tree/map
-import ternary_tree/utils
+let emptyBranch: TernaryTreeList<any> = null as any;
 
-# just get, will not compute recursively
-proc getDepth*[T](tree: TernaryTreeList[T]): int =
-  if tree.isNil:
-    return 0
-  case tree.kind
-  of ternaryTreeLeaf:
-    1
-  of ternaryTreeBranch:
-    tree.depth
+export function decideParentDepth<T>(...xs: Array<TernaryTreeList<T>>): number {
+  var depth = 0;
+  for (let x of xs) {
+    let y = getDepth(x);
+    if (y > depth) {
+      depth = y;
+    }
+  }
+  return depth + 1;
+}
 
-proc decideParentDepth[T](xs: varargs[TernaryTreeList[T]]): int =
-  var depth = 0
-  for x in xs:
-    let y = x.getDepth
-    if y > depth:
-      depth = y
-  return depth + 1
+export function initTernaryTreeListIter<T>(size: number, offset: number, xs: /* var */ Array<TernaryTreeList<T>>): TernaryTreeList<T> {
+  switch (size) {
+    case 0: {
+      return { kind: TernaryTreeKind.ternaryTreeBranch, size: 0, depth: 1, left: emptyBranch, middle: emptyBranch, right: emptyBranch } as TernaryTreeList<T>;
+    }
+    case 1:
+      xs[offset];
+    case 2: {
+      let left = xs[offset];
+      let right = xs[offset + 1];
+      let result: TernaryTreeList<T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        size: 2,
+        left: left,
+        middle: emptyBranch,
+        right: right,
+        depth: 2,
+      };
+      return result;
+    }
+    case 3: {
+      let left = xs[offset];
+      let middle = xs[offset + 1];
+      let right = xs[offset + 2];
+      let result: TernaryTreeList<T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        size: 3,
+        left: left,
+        middle: middle,
+        right: right,
+        depth: 2,
+      };
+      return result;
+    }
+    default: {
+      let divided = divideTernarySizes(size);
 
-proc initTernaryTreeList*[T](size: int, offset: int, xs: var seq[TernaryTreeList[T]]): TernaryTreeList[T] =
-  case size
-    of 0:
-      TernaryTreeList[T](kind: ternaryTreeBranch, size: 0, depth: 1)
-    of 1:
-      xs[offset]
-    of 2:
-      let left = xs[offset]
-      let right = xs[offset + 1]
-      TernaryTreeList[T](kind: ternaryTreeBranch, size: 2, left: left, right: right, depth: 2)
-    of 3:
-      let left = xs[offset]
-      let middle = xs[offset + 1]
-      let right = xs[offset + 2]
-      TernaryTreeList[T](kind: ternaryTreeBranch, size: 3, left: left, middle: middle, right: right, depth: 2)
-    else:
-      let divided = divideTernarySizes(size)
-
-      let left = initTernaryTreeList(divided.left, offset, xs)
-      let middle = initTernaryTreeList(divided.middle, offset + divided.left, xs)
-      let right = initTernaryTreeList(divided.right, offset + divided.left + divided.middle, xs)
-      TernaryTreeList[T](
-        kind: ternaryTreeBranch, size: size,
+      let left = initTernaryTreeListIter(divided.left, offset, xs);
+      let middle = initTernaryTreeListIter(divided.middle, offset + divided.left, xs);
+      let right = initTernaryTreeListIter(divided.right, offset + divided.left + divided.middle, xs);
+      let result: TernaryTreeList<T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        size: size,
         depth: decideParentDepth(left, middle, right),
-        left: left, middle: middle, right: right,
-      )
+        left: left,
+        middle: middle,
+        right: right,
+      };
+      return result;
+    }
+  }
+}
 
-proc initTernaryTreeList*[T](xs: seq[T]): TernaryTreeList[T] =
-  var ys = newSeq[TernaryTreeList[T]](xs.len)
-  for idx, x in xs:
-    ys[idx] = TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: x)
-  initTernaryTreeList(xs.len, 0, ys)
+export function initTernaryTreeList<T>(xs: Array<T>): TernaryTreeList<T> {
+  var ys = new Array<TernaryTreeList<T>>(xs.length);
+  for (let idx in xs) {
+    let x = xs[idx];
+    ys[idx] = { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: x };
+  }
+  return initTernaryTreeListIter(xs.length, 0, ys);
+}
 
-proc initTernaryTreeList*[T](): TernaryTreeList[T] =
-  TernaryTreeList[T](kind: ternaryTreeBranch, size: 0, depth: 1)
+export function initEmptyTernaryTreeList<T>(): TernaryTreeList<T> {
+  return { kind: TernaryTreeKind.ternaryTreeBranch, size: 0, depth: 1, middle: emptyBranch, left: emptyBranch, right: emptyBranch };
+}
 
-proc `$`*(tree: TernaryTreeList): string =
-  fmt"TernaryTreeList[{tree.size}, ...]"
+export function listToString<T>(tree: TernaryTreeList<T>): string {
+  return `TernaryTreeList[{tree.size}, ...]`;
+}
 
-proc len*(tree: TernaryTreeList): int =
-  if tree.isNil:
-    0
-  else:
-    tree.size
+export function listLen<T>(tree: TernaryTreeList<T>): number {
+  if (tree == null) {
+    return 0;
+  } else {
+    return tree.size;
+  }
+}
 
-proc isLeaf(tree: TernaryTreeList): bool =
-  tree.kind == ternaryTreeLeaf
+export function isLeaf<T>(tree: TernaryTreeList<T>): boolean {
+  return tree.kind == TernaryTreeKind.ternaryTreeLeaf;
+}
 
-proc isBranch(tree: TernaryTreeList): bool =
-  tree.kind == ternaryTreeBranch
+export function isBranch<T>(tree: TernaryTreeList<T>): boolean {
+  return tree.kind == TernaryTreeKind.ternaryTreeBranch;
+}
 
-proc formatInline*(tree: TernaryTreeList): string =
-  if tree.isNil:
-    return "_"
-  case tree.kind
-  of ternaryTreeLeaf:
-    $tree.value
-  of ternaryTreeBranch:
-    "(" & tree.left.formatInline & " " & tree.middle.formatInline & " " & tree.right.formatInline & ")"
-    # "(" & tree.left.formatInline & " " & tree.middle.formatInline & " " & tree.right.formatInline & fmt")@{tree.depth} " & fmt"{tree.left.getDepth} {tree.middle.getDepth} {tree.right.getDepth}..."
+export function formatListInline<T>(tree: TernaryTreeList<T>): string {
+  if (tree == null) return "_";
+  switch (tree.kind) {
+    case TernaryTreeKind.ternaryTreeLeaf:
+      return listToString<T>(tree);
+    case TernaryTreeKind.ternaryTreeBranch:
+      return "(" + formatListInline(tree.left) + " " + formatListInline(tree.middle) + " " + formatListInline(tree.right) + ")";
+    // "(" & tree.left.formatListInline & " " & tree.middle.formatListInline & " " & tree.right.formatListInline & ")@{tree.depth} " & "{tree.left.getDepth} {tree.middle.getDepth} {tree.right.getDepth}..."
+  }
+}
 
-proc writeSeq*[T](tree: TernaryTreeList[T], acc: var seq[T], idx: RefInt): void =
-  if tree.isNil:
-    discard
-  case tree.kind
-  of ternaryTreeLeaf:
-    acc[idx[]] = tree.value
-    idx[] = idx[] + 1
-  of ternaryTreeBranch:
-    if not tree.left.isNil:
-      tree.left.writeSeq(acc, idx)
-    if not tree.middle.isNil:
-      tree.middle.writeSeq(acc, idx)
-    if not tree.right.isNil:
-      tree.right.writeSeq(acc, idx)
+export function writeSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<T>, idx: RefInt): void {
+  if (tree == null) {
+    // discard
+  } else {
+    switch (tree.kind) {
+      case TernaryTreeKind.ternaryTreeLeaf: {
+        acc[idx.value] = tree.value;
+        idx.value = idx.value + 1;
+        break;
+      }
+      case TernaryTreeKind.ternaryTreeBranch: {
+        if (tree.left != null) {
+          writeSeq(tree.left, acc, idx);
+        }
+        if (tree.middle != null) {
+          writeSeq(tree.middle, acc, idx);
+        }
+        if (tree.right != null) {
+          writeSeq(tree.right, acc, idx);
+        }
+        break;
+      }
+    }
+  }
+}
 
-proc toSeq*[T](tree: TernaryTreeList[T]): seq[T] =
-  var acc = newSeq[T](tree.len)
-  var counter = new RefInt
-  counter[] = 0
-  writeSeq(tree, acc, counter)
-  return acc
+export function listToSeq<T>(tree: TernaryTreeList<T>): Array<T> {
+  var acc = new Array<T>(listLen(tree));
+  var counter: RefInt = { value: 0 };
+  counter.value = 0;
+  writeSeq(tree, acc, counter);
+  return acc;
+}
 
-proc each*[T](tree: TernaryTreeList[T], f: proc(x: T): void): void =
-  if tree.isNil:
-    discard
-  case tree.kind
-  of ternaryTreeLeaf:
-    f(tree.value)
-  of ternaryTreeBranch:
-    if not tree.left.isNil:
-      tree.left.each(f)
-    if not tree.middle.isNil:
-      tree.middle.each(f)
-    if not tree.right.isNil:
-      tree.right.each(f)
+export function each<T>(tree: TernaryTreeList<T>, f: (x: T) => void): void {
+  if (tree == null) {
+    //
+  } else {
+    switch (tree.kind) {
+      case TernaryTreeKind.ternaryTreeLeaf: {
+        f(tree.value);
+        break;
+      }
+      case TernaryTreeKind.ternaryTreeBranch: {
+        if (tree.left != null) {
+          each(tree.left, f);
+        }
+        if (tree.middle != null) {
+          each(tree.middle, f);
+        }
+        if (tree.right != null) {
+          each(tree.right, f);
+        }
+        break;
+      }
+    }
+  }
+}
 
-# returns -1 if not found
-proc findIndex*[T](tree: TernaryTreeList[T], f: proc(x: T): bool): int =
-  if tree.isNil:
-    return -1
-  case tree.kind:
-  of ternaryTreeLeaf:
-    if f(tree.value):
-      return 0
-    else:
-      return -1
-  of ternaryTreeBranch:
-    let tryLeft = tree.left.findIndex(f)
-    if tryLeft >= 0:
-      return tryLeft
-    let tryMiddle = tree.middle.findIndex(f)
-    if tryMiddle >= 0:
-      return tryMiddle + tree.left.len
-    let tryRight = tree.right.findIndex(f)
-    if tryRight >= 0:
-      return tryRight + tree.left.len + tree.middle.len
-    return -1
+// returns -1 if (not foun)
+export function findIndex<T>(tree: TernaryTreeList<T>, f: (x: T) => boolean): number {
+  if (tree == null) {
+    return -1;
+  }
+  switch (tree.kind) {
+    case TernaryTreeKind.ternaryTreeLeaf: {
+      if (f(tree.value)) {
+        return 0;
+      } else {
+        return -1;
+      }
+    }
+    case TernaryTreeKind.ternaryTreeBranch: {
+      let tryLeft = findIndex(tree.left, f);
+      if (tryLeft >= 0) {
+        return tryLeft;
+      }
+      let tryMiddle = findIndex(tree.middle, f);
+      if (tryMiddle >= 0) {
+        return tryMiddle + listLen(tree.left);
+      }
+      let tryRight = findIndex(tree.right, f);
+      if (tryRight >= 0) {
+        return tryRight + listLen(tree.left) + listLen(tree.middle);
+      }
+      return -1;
+    }
+  }
+}
 
-# returns -1 if not found
-proc indexOf*[T](tree: TernaryTreeList[T], item: T): int =
-  if tree.isNil:
-    return -1
-  case tree.kind:
-  of ternaryTreeLeaf:
-    if item == tree.value:
-      return 0
-    else:
-      return -1
-  of ternaryTreeBranch:
-    let tryLeft = tree.left.indexOf(item)
-    if tryLeft >= 0:
-      return tryLeft
-    let tryMiddle = tree.middle.indexOf(item)
-    if tryMiddle >= 0:
-      return tryMiddle + tree.left.len
-    let tryRight = tree.right.indexOf(item)
-    if tryRight >= 0:
-      return tryRight + tree.left.len + tree.middle.len
-    return -1
+// returns -1 if (not foun)
+export function indexOf<T>(tree: TernaryTreeList<T>, item: T): number {
+  if (tree == null) {
+    return -1;
+  }
+  switch (tree.kind) {
+    case TernaryTreeKind.ternaryTreeLeaf:
+      if (item == tree.value) {
+        return 0;
+      }
+    default:
+      return -1;
+    case TernaryTreeKind.ternaryTreeBranch:
+      let tryLeft = indexOf(tree.left, item);
+      if (tryLeft >= 0) {
+        return tryLeft;
+      }
+      let tryMiddle = indexOf(tree.middle, item);
+      if (tryMiddle >= 0) {
+        return tryMiddle + listLen(tree.left);
+      }
+      let tryRight = indexOf(tree.right, item);
+      if (tryRight >= 0) {
+        return tryRight + listLen(tree.left) + listLen(tree.middle);
+      }
+      return -1;
+  }
+}
 
-proc writeLeavesSeq*[T](tree: TernaryTreeList[T], acc: var seq[TernaryTreeList[T]], idx: RefInt): void =
-  if tree.isNil:
-    discard
-  case tree.kind
-  of ternaryTreeLeaf:
-    acc[idx[]] = tree
-    idx[] = idx[] + 1
-  of ternaryTreeBranch:
-    if not tree.left.isNil:
-      tree.left.writeLeavesSeq(acc, idx)
-    if not tree.middle.isNil:
-      tree.middle.writeLeavesSeq(acc, idx)
-    if not tree.right.isNil:
-      tree.right.writeLeavesSeq(acc, idx)
+export function writeLeavesSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<TernaryTreeList<T>>, idx: RefInt): void {
+  if (tree == null) {
+    //
+  } else {
+    switch (tree.kind) {
+      case TernaryTreeKind.ternaryTreeLeaf: {
+        acc[idx.value] = tree;
+        idx.value = idx.value + 1;
+        break;
+      }
+      case TernaryTreeKind.ternaryTreeBranch: {
+        if (tree.left != null) writeLeavesSeq(tree.left, acc, idx);
+        if (tree.middle != null) writeLeavesSeq(tree.middle, acc, idx);
+        if (tree.right != null) writeLeavesSeq(tree.right, acc, idx);
+        break;
+      }
+      default: {
+        throw new Error("Unknown");
+      }
+    }
+  }
+}
 
-proc toLeavesSeq*[T](tree: TernaryTreeList[T]): seq[TernaryTreeList[T]] =
-  var acc = newSeq[TernaryTreeList[T]](tree.len)
-  var counter = new RefInt
-  counter[] = 0
-  writeLeavesSeq(tree, acc, counter)
-  return acc
+export function toLeavesSeq<T>(tree: TernaryTreeList<T>): Array<TernaryTreeList<T>> {
+  var acc = new Array<TernaryTreeList<T>>(listLen(tree));
+  var counter: RefInt = { value: 0 };
+  writeLeavesSeq(tree, acc, counter);
+  return acc;
+}
 
-# recursive iterator not supported, use slow seq for now
-# https://forum.nim-lang.org/t/5697
-iterator items*[T](tree: TernaryTreeList[T]): T =
-  # let seqItems = tree.toSeq()
+// https://forum.nim-lang.org/t/5697
+export function* listItems<T>(tree: TernaryTreeList<T>): Generator<T> {
+  // let seqItems = tree.toSeq()
 
-  # for x in seqItems:
-  #   yield x
+  // for x in seqItems:
+  //   yield x
 
-  for idx in 0..<tree.len:
-    yield tree[idx]
+  for (let idx = 0; i < listLen(tree); i++) {
+    yield loopGetList(tree, idx);
+  }
+}
 
-iterator pairs*[T](tree: TernaryTreeList[T]): tuple[k: int, v: T] =
-  let seqItems = tree.toSeq()
+export function* listPairs<T>(tree: TernaryTreeList<T>): Generator<[number, T]> {
+  let seqItems = listToSeq(tree);
 
-  for idx, x in seqItems:
-    yield (idx, x)
+  for (let idx in seqItems) {
+    let x = seqItems[idx];
+    yield [parseInt(idx), x];
+  }
+}
 
-proc loopGet*[T](originalTree: TernaryTreeList[T], originalIdx: int): T =
-  var tree = originalTree
-  var idx = originalIdx
-  while tree.isNil.not:
-    if idx < 0:
-      raise newException(TernaryTreeError, "Cannot index negative number")
+export function loopGetList<T>(originalTree: TernaryTreeList<T>, originalIdx: number): T {
+  var tree = originalTree;
+  var idx = originalIdx;
+  while (tree != null) {
+    if (idx < 0) {
+      throw new Error("Cannot index negative number");
+    }
 
-    if tree.kind == ternaryTreeLeaf:
-      if idx == 0:
-        return tree.value
-      else:
-        raise newException(TernaryTreeError, fmt"Cannot get from leaf with index {idx}")
+    if (tree.kind == TernaryTreeKind.ternaryTreeLeaf) {
+      if (idx == 0) {
+        return tree.value;
+      } else {
+        throw new Error("Cannot get from leaf with index {idx}");
+      }
+    }
 
-    if idx > (tree.size - 1):
-      raise newException(TernaryTreeError, "Index too large")
+    if (idx > tree.size - 1) {
+      throw new Error("Index too large");
+    }
 
-    let leftSize = if tree.left.isNil: 0 else: tree.left.size
-    let middleSize = if tree.middle.isNil: 0 else: tree.middle.size
-    let rightSize = if tree.right.isNil: 0 else: tree.right.size
+    let leftSize = tree.left == null ? 0 : tree.left.size;
+    let middleSize = tree.middle == null ? 0 : tree.middle.size;
+    let rightSize = tree.right == null ? 0 : tree.right.size;
 
-    if leftSize + middleSize + rightSize != tree.size:
-      raise newException(TernaryTreeError, "tree.size does not match sum of branch sizes")
+    if (leftSize + middleSize + rightSize != tree.size) {
+      throw new Error("tree.size does not match sum case branch sizes");
+    }
 
-    if idx <= leftSize - 1:
-      tree = tree.left
-    elif idx <= leftSize + middleSize - 1:
-      tree = tree.middle
-      idx = idx - leftSize
-    else:
-      tree = tree.right
-      idx = idx - leftSize - middleSize
+    if (idx <= leftSize - 1) {
+      tree = tree.left;
+    } else if (idx <= leftSize + middleSize - 1) {
+      tree = tree.middle;
+      idx = idx - leftSize;
+    } else {
+      tree = tree.right;
+      idx = idx - leftSize - middleSize;
+    }
+  }
 
-  raise newException(TernaryTreeError, fmt"Failed to get {idx}")
+  throw new Error("Failed to get {idx}");
+}
 
-proc `[]`*[T](tree: TernaryTreeList[T], idx: int): T =
-  tree.loopGet(idx)
+export function first<T>(tree: TernaryTreeList<T>): T {
+  if (listLen(tree) > 0) {
+    return loopGetList(tree, 0);
+  } else {
+    throw new Error("Cannot get from empty list");
+  }
+}
 
-proc first*[T](tree: TernaryTreeList[T]): T =
-  if tree.len > 0:
-    tree.loopGet(0)
-  else:
-    raise newException(TernaryTreeError, "Cannot get from empty list")
+export function last<T>(tree: TernaryTreeList<T>): T {
+  if (listLen(tree) > 0) {
+    return loopGetList(tree, listLen(tree) - 1);
+  } else {
+    throw new Error("Cannot get from empty list");
+  }
+}
 
-proc last*[T](tree: TernaryTreeList[T]): T =
-  if tree.len > 0:
-    tree.loopGet(tree.len - 1)
-  else:
-    raise newException(TernaryTreeError, "Cannot get from empty list")
+export function assocList<T>(tree: TernaryTreeList<T>, idx: number, item: T): TernaryTreeList<T> {
+  if (idx < 0) {
+    throw new Error("Cannot index negative number");
+  }
+  if (idx > tree.size - 1) {
+    throw new Error("Index too large");
+  }
 
-proc assoc*[T](tree: TernaryTreeList[T], idx: int, item: T): TernaryTreeList[T] =
-  if idx < 0:
-    raise newException(TernaryTreeError, "Cannot index negative number")
-  if idx > (tree.size - 1):
-    raise newException(TernaryTreeError, "Index too large")
+  if (tree.kind == TernaryTreeKind.ternaryTreeLeaf) {
+    if (idx == 0) {
+      return { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>;
+    } else {
+      throw new Error("Cannot get from leaf with index {idx}");
+    }
+  }
 
-  if tree.kind == ternaryTreeLeaf:
-    if idx == 0:
-      return TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item)
-    else:
-      raise newException(TernaryTreeError, fmt"Cannot get from leaf with index {idx}")
+  let leftSize = listLen(tree.left);
+  let middleSize = listLen(tree.middle);
+  let rightSize = listLen(tree.right);
 
-  let leftSize = tree.left.len
-  let middleSize = tree.middle.len
-  let rightSize = tree.right.len
+  if (leftSize + middleSize + rightSize != tree.size) throw new Error("tree.size does not match sum case branch sizes");
 
-  if leftSize + middleSize + rightSize != tree.size:
-    raise newException(TernaryTreeError, "tree.size does not match sum of branch sizes")
-
-  if idx <= leftSize - 1:
-    let changedBranch = tree.left.assoc(idx, item)
-    return TernaryTreeList[T](
-      kind: ternaryTreeBranch, size: tree.size,
+  if (idx <= leftSize - 1) {
+    let changedBranch = assocList(tree.left, idx, item);
+    let result: TernaryTreeList<T> = {
+      kind: TernaryTreeKind.ternaryTreeBranch,
+      size: tree.size,
       depth: decideParentDepth(changedBranch, tree.middle, tree.right),
       left: changedBranch,
       middle: tree.middle,
-      right: tree.right
-    )
-  elif idx <= leftSize + middleSize - 1:
-    let changedBranch = tree.middle.assoc(idx - leftSize, item)
-    return TernaryTreeList[T](
-      kind: ternaryTreeBranch, size: tree.size,
+      right: tree.right,
+    };
+    return result;
+  } else if (idx <= leftSize + middleSize - 1) {
+    let changedBranch = assocList(tree.middle, idx - leftSize, item);
+    let result: TernaryTreeList<T> = {
+      kind: TernaryTreeKind.ternaryTreeBranch,
+      size: tree.size,
       depth: decideParentDepth(tree.left, changedBranch, tree.right),
       left: tree.left,
       middle: changedBranch,
-      right: tree.right
-    )
-  else:
-    let changedBranch = tree.right.assoc(idx - leftSize - middleSize, item)
-    return TernaryTreeList[T](
-      kind: ternaryTreeBranch, size: tree.size,
+      right: tree.right,
+    };
+    return result;
+  } else {
+    let changedBranch = assocList(tree.right, idx - leftSize - middleSize, item);
+    let result: TernaryTreeList<T> = {
+      kind: TernaryTreeKind.ternaryTreeBranch,
+      size: tree.size,
       depth: decideParentDepth(tree.left, tree.middle, changedBranch),
       left: tree.left,
       middle: tree.middle,
-      right: changedBranch
-    )
+      right: changedBranch,
+    };
+    return result;
+  }
+}
 
-proc dissoc*[T](tree: TernaryTreeList[T], idx: int): TernaryTreeList[T] =
-  if tree.isNil:
-    raise newException(TernaryTreeError, "dissoc does not work on nil")
+export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTreeList<T> {
+  if (tree == null) {
+    throw new Error("dissoc does not work on null");
+  }
 
-  if idx < 0:
-    raise newException(TernaryTreeError, fmt"Index is negative {idx}")
+  if (idx < 0) {
+    throw new Error("Index is negative {idx}");
+  }
 
-  if tree.len == 0:
-    raise newException(TernaryTreeError, "Cannot remove from empty list")
+  if (listLen(tree) == 0) {
+    throw new Error("Cannot remove from empty list");
+  }
 
-  if idx > tree.len - 1:
-    raise newException(TernaryTreeError, fmt"Index too large {idx}")
+  if (idx > listLen(tree) - 1) {
+    throw new Error("Index too large {idx}");
+  }
 
-  if tree.len == 1:
-    return TernaryTreeList[T](
-      kind: ternaryTreeBranch, size: 0,
+  if (listLen(tree) == 1) {
+    let result: TernaryTreeList<T> = {
+      kind: TernaryTreeKind.ternaryTreeBranch,
+      size: 0,
       depth: 1,
-      left: nil,
-      middle: nil,
-      right: nil
-    )
+      left: emptyBranch,
+      middle: emptyBranch,
+      right: emptyBranch,
+    };
+    return result;
+  }
 
-  if tree.kind == ternaryTreeLeaf:
-    raise newException(TernaryTreeError, "dissoc should be handled at branches")
+  if (tree.kind == TernaryTreeKind.ternaryTreeLeaf) {
+    throw new Error("dissoc should be handled at branches");
+  }
 
-  let leftSize = tree.left.len
-  let middleSize = tree.middle.len
-  let rightSize = tree.right.len
+  let leftSize = listLen(tree.left);
+  let middleSize = listLen(tree.middle);
+  let rightSize = listLen(tree.right);
 
-  if leftSize + middleSize + rightSize != tree.size:
-    raise newException(TernaryTreeError, "tree.size does not match sum of branch sizes")
+  if (leftSize + middleSize + rightSize != tree.size) {
+    throw new Error("tree.size does not match sum case branch sizes");
+  }
 
-  if idx <= leftSize - 1:
-    var changedBranch = tree.left.dissoc(idx)
-    if changedBranch.size == 0:
-      changedBranch = nil
-    result = TernaryTreeList[T](
-      kind: ternaryTreeBranch, size: tree.size - 1,
+  let result: TernaryTreeList<T> = emptyBranch;
+
+  if (idx <= leftSize - 1) {
+    let changedBranch = dissocList(tree.left, idx);
+    if (changedBranch.size == 0) {
+      changedBranch = emptyBranch;
+    }
+    result = {
+      kind: TernaryTreeKind.ternaryTreeBranch,
+      size: tree.size - 1,
       depth: decideParentDepth(changedBranch, tree.middle, tree.right),
       left: changedBranch,
       middle: tree.middle,
-      right: tree.right
-    )
-  elif idx <= leftSize + middleSize - 1:
-    var changedBranch = tree.middle.dissoc(idx - leftSize)
-    if changedBranch.size == 0:
-      changedBranch = nil
-    result = TernaryTreeList[T](
-      kind: ternaryTreeBranch, size: tree.size - 1,
+      right: tree.right,
+    };
+  } else if (idx <= leftSize + middleSize - 1) {
+    let changedBranch = dissocList(tree.middle, idx - leftSize);
+    if (changedBranch.size == 0) {
+      changedBranch = emptyBranch;
+    }
+    result = {
+      kind: TernaryTreeKind.ternaryTreeBranch,
+      size: tree.size - 1,
       depth: decideParentDepth(tree.left, changedBranch, tree.right),
       left: tree.left,
       middle: changedBranch,
-      right: tree.right
-    )
-  else:
-    var changedBranch = tree.right.dissoc(idx - leftSize - middleSize)
-    if changedBranch.size == 0:
-      changedBranch = nil
-    result = TernaryTreeList[T](
-      kind: ternaryTreeBranch, size: tree.size - 1,
+      right: tree.right,
+    };
+  } else {
+    let changedBranch = dissocList(tree.right, idx - leftSize - middleSize);
+    if (changedBranch.size == 0) {
+      changedBranch = emptyBranch;
+    }
+    result = {
+      kind: TernaryTreeKind.ternaryTreeBranch,
+      size: tree.size - 1,
       depth: decideParentDepth(tree.left, tree.middle, changedBranch),
       left: tree.left,
       middle: tree.middle,
-      right: changedBranch
-    )
+      right: changedBranch,
+    };
+  }
+  // TODO
+  if (listLen(result) == 1) {
+    result = {
+      kind: TernaryTreeKind.ternaryTreeLeaf,
+      size: 1,
+      value: loopGetList(result, 0),
+    };
+    return result;
+  }
 
-  if result.len == 1:
-    result = TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: result.loopGet(0))
+  throw new Error("Unknown");
+}
 
-  return result
+export function rest<T>(tree: TernaryTreeList<T>): TernaryTreeList<T> {
+  if (tree == null) {
+    throw new Error("Cannot call rest on null");
+  }
+  if (listLen(tree) < 1) {
+    throw new Error("Cannot call rest on empty list");
+  }
 
-proc rest*[T](tree: TernaryTreeList[T]): TernaryTreeList[T] =
-  if tree.isNil:
-    raise newException(TernaryTreeError, "Cannot call rest on nil")
-  if tree.len < 1:
-    raise newException(TernaryTreeError, "Cannot call rest on empty list")
+  return dissocList(tree, 0);
+}
 
-  tree.dissoc(0)
+export function butlast<T>(tree: TernaryTreeList<T>): TernaryTreeList<T> {
+  if (tree == null) {
+    throw new Error("Cannot call butlast on null");
+  }
+  if (listLen(tree) < 1) {
+    throw new Error("Cannot call butlast on empty list");
+  }
 
-proc butlast*[T](tree: TernaryTreeList[T]): TernaryTreeList[T] =
-  if tree.isNil:
-    raise newException(TernaryTreeError, "Cannot call butlast on nil")
-  if tree.len < 1:
-    raise newException(TernaryTreeError, "Cannot call butlast on empty list")
+  return dissocList(tree, listLen(tree) - 1);
+}
 
-  tree.dissoc(tree.len - 1)
+export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after: boolean = false): TernaryTreeList<T> {
+  if (tree == null) {
+    throw new Error("Cannot insert into null");
+  }
+  if (listLen(tree) == 0) {
+    throw new Error("Empty node is not a correct position for inserting");
+  }
 
-proc insert*[T](tree: TernaryTreeList[T], idx: int, item: T, after: bool = false): TernaryTreeList[T] =
-  if tree.isNil:
-    raise newException(TernaryTreeError, "Cannot insert into nil")
-  if tree.len == 0:
-    raise newException(TernaryTreeError, "Empty node is not a correct position for inserting")
-
-  if tree.kind == ternaryTreeLeaf:
-    if after:
-      return TernaryTreeList[T](
-        kind: ternaryTreeBranch,
-        depth: tree.getDepth + 1,
+  if (tree.kind == TernaryTreeKind.ternaryTreeLeaf) {
+    if (after) {
+      let result: TernaryTreeList<T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        depth: getDepth(tree) + 1,
         size: 2,
         left: tree,
-        middle: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item),
-        right: nil
-      )
-    else:
-
-      return TernaryTreeList[T](
-        kind: ternaryTreeBranch,
-        depth: tree.getDepth + 1,
+        middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+        right: emptyBranch,
+      };
+      return result;
+    } else {
+      let result: TernaryTreeList<T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        depth: getDepth(tree) + 1,
         size: 2,
-        left: nil,
-        middle: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item),
-        right: tree
-      )
+        left: emptyBranch,
+        middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+        right: tree,
+      };
+      return result;
+    }
+  }
 
-  if tree.len == 1:
-    if after:
-      if tree.left != nil:
-        return TernaryTreeList[T](
-          kind: ternaryTreeBranch,
+  if (listLen(tree) == 1) {
+    if (after)
+      if (tree.left != null) {
+        let result: TernaryTreeList<T> = {
+          kind: TernaryTreeKind.ternaryTreeBranch,
           size: 2,
           depth: 2,
           left: tree.left,
-          middle: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item),
-          right: nil
-        )
-      elif tree.middle != nil:
-        return TernaryTreeList[T](
-          kind: ternaryTreeBranch,
+          middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+          right: emptyBranch,
+        };
+        return result;
+      } else if (tree.middle != null) {
+        let result: TernaryTreeList<T> = {
+          kind: TernaryTreeKind.ternaryTreeBranch,
           size: 2,
           depth: 2,
-          left: nil,
+          left: emptyBranch,
           middle: tree.middle,
-          right: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item)
-        )
-      else:
-        return TernaryTreeList[T](
-          kind: ternaryTreeBranch,
+          right: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+        };
+        return result;
+      } else {
+        let result: TernaryTreeList<T> = {
+          kind: TernaryTreeKind.ternaryTreeBranch,
           size: 2,
           depth: 2,
           left: tree.right,
-          middle: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item),
-          right: nil
-        )
-    else:
-      if tree.right != nil:
-        return TernaryTreeList[T](
-          kind: ternaryTreeBranch,
+          middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+          right: emptyBranch,
+        };
+        return result;
+      }
+    else {
+      if (tree.right != null) {
+        let result: TernaryTreeList<T> = {
+          kind: TernaryTreeKind.ternaryTreeBranch,
           size: 2,
           depth: 2,
-          left: nil,
-          middle: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item),
-          right: tree.right
-        )
-      elif tree.middle != nil:
-        return TernaryTreeList[T](
-          kind: ternaryTreeBranch,
+          left: emptyBranch,
+          middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+          right: tree.right,
+        };
+        return result;
+      } else if (tree.middle != null) {
+        let result: TernaryTreeList<T> = {
+          kind: TernaryTreeKind.ternaryTreeBranch,
           size: 2,
-          depth: tree.middle.getDepth + 1,
-          left: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item),
+          depth: getDepth(tree.middle) + 1,
+          left: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
           middle: tree.middle,
-          right: nil
-        )
-      else:
-        return TernaryTreeList[T](
-          kind: ternaryTreeBranch,
+          right: emptyBranch,
+        };
+        return result;
+      } else {
+        let result: TernaryTreeList<T> = {
+          kind: TernaryTreeKind.ternaryTreeBranch,
           size: 2,
-          depth: tree.middle.getDepth + 1,
-          left: nil,
-          middle: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item),
-          right: tree.left
-        )
+          depth: getDepth(tree.middle) + 1,
+          left: emptyData,
+          middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+          right: tree.left,
+        };
+        return result;
+      }
+    }
+  }
 
-  if tree.len == 2:
-    if after:
-      if tree.right.isNil:
-        return TernaryTreeList[T](
-          kind: ternaryTreeBranch,
+  if (listLen(tree) == 2) {
+    if (after) {
+      if (tree.right == null) {
+        let result: TernaryTreeList<T> = {
+          kind: TernaryTreeKind.ternaryTreeBranch,
           size: 3,
           depth: 2,
           left: tree.left,
           middle: tree.middle,
-          right: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item)
-        )
-      elif tree.middle.isNil:
-        if idx == 0:
-          return TernaryTreeList[T](
-            kind: ternaryTreeBranch,
+          right: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+        };
+        return result;
+      } else if (tree.middle == null) {
+        if (idx == 0) {
+          let result: TernaryTreeList<T> = {
+            kind: TernaryTreeKind.ternaryTreeBranch,
             size: 3,
             depth: 2,
             left: tree.left,
-            middle: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item),
-            right: tree.right
-          )
-        elif idx == 1:
-          return TernaryTreeList[T](
-            kind: ternaryTreeBranch,
+            middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+            right: tree.right,
+          };
+          return result;
+        } else if (idx == 1) {
+          let result: TernaryTreeList<T> = {
+            kind: TernaryTreeKind.ternaryTreeBranch,
             size: 3,
             depth: 2,
             left: tree.left,
             middle: tree.right,
-            right: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item)
-          )
-        else:
-          raise newException(TernaryTreeError, fmt"Unexpected idx: {idx}")
-      else:
-        if idx == 0:
-          return TernaryTreeList[T](
-            kind: ternaryTreeBranch,
+            right: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+          };
+          return result;
+        } else {
+          throw new Error(`Unexpected idx: ${idx}`);
+        }
+      } else {
+        if (idx == 0) {
+          let result: TernaryTreeList<T> = {
+            kind: TernaryTreeKind.ternaryTreeBranch,
             size: 3,
             depth: 2,
             left: tree.middle,
-            middle: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item),
-            right: tree.right
-          )
-        elif idx == 1:
-          return TernaryTreeList[T](
-            kind: ternaryTreeBranch,
+            middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+            right: tree.right,
+          };
+          return result;
+        } else if (idx == 1) {
+          let result: TernaryTreeList<T> = {
+            kind: TernaryTreeKind.ternaryTreeBranch,
             size: 3,
             depth: 2,
             left: tree.middle,
             middle: tree.right,
-            right: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item)
-          )
-        else:
-          raise newException(TernaryTreeError, fmt"Unexpected idx: {idx}")
-    else:
-      if tree.left.isNil:
-        return TernaryTreeList[T](
-          kind: ternaryTreeBranch,
+            right: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+          };
+          return result;
+        } else {
+          throw new Error("Unexpected idx: {idx}");
+        }
+      }
+    } else {
+      if (tree.left == null) {
+        let result: TernaryTreeList<T> = {
+          kind: TernaryTreeKind.ternaryTreeBranch,
           size: 3,
           depth: 2,
-          left: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item),
+          left: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
           middle: tree.middle,
-          right: tree.right
-        )
-      elif tree.middle.isNil:
-        if idx == 0:
-          return TernaryTreeList[T](
-            kind: ternaryTreeBranch,
+          right: tree.right,
+        };
+        return result;
+      } else if (tree.middle == null) {
+        if (idx == 0) {
+          let result: TernaryTreeList<T> = {
+            kind: TernaryTreeKind.ternaryTreeBranch,
             size: 3,
             depth: 2,
-            left: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item),
+            left: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
             middle: tree.left,
-            right: tree.right
-          )
-        elif idx == 1:
-          return TernaryTreeList[T](
-            kind: ternaryTreeBranch,
+            right: tree.right,
+          };
+          return result;
+        } else if (idx == 1) {
+          let result: TernaryTreeList<T> = {
+            kind: TernaryTreeKind.ternaryTreeBranch,
             size: 3,
             depth: 2,
             left: tree.left,
-            middle: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item),
-            right: tree.right
-          )
-        else:
-          raise newException(TernaryTreeError, fmt"Unexpected idx: {idx}")
-      else:
-        if idx == 0:
-          return TernaryTreeList[T](
-            kind: ternaryTreeBranch,
+            middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+            right: tree.right,
+          };
+          return result;
+        } else {
+          throw new Error("Unexpected idx: {idx}");
+        }
+      } else {
+        if (idx == 0) {
+          let result: TernaryTreeList<T> = {
+            kind: TernaryTreeKind.ternaryTreeBranch,
             size: 3,
             depth: 2,
-            left: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item),
+            left: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
             middle: tree.left,
-            right: tree.middle
-          )
-        elif idx == 1:
-          return TernaryTreeList[T](
-            kind: ternaryTreeBranch,
+            right: tree.middle,
+          };
+          return result;
+        } else if (idx == 1) {
+          let result: TernaryTreeList<T> = {
+            kind: TernaryTreeKind.ternaryTreeBranch,
             size: 3,
             depth: 2,
             left: tree.left,
-            middle: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item),
-            right: tree.middle
-          )
-        else:
-          raise newException(TernaryTreeError, fmt"Unexpected idx: {idx}")
+            middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+            right: tree.middle,
+          };
+          return result;
+        } else {
+          throw new Error("Unexpected idx: {idx}");
+        }
+      }
+    }
+  }
 
-  let leftSize = tree.left.len
-  let middleSize = tree.middle.len
-  let rightSize = tree.right.len
+  let leftSize = listLen(tree.left);
+  let middleSize = listLen(tree.middle);
+  let rightSize = listLen(tree.right);
 
-  if leftSize + middleSize + rightSize != tree.size:
-    raise newException(TernaryTreeError, "tree.size does not match sum of branch sizes")
+  if (leftSize + middleSize + rightSize != tree.size) {
+    throw new Error("tree.size does not match sum case branch sizes");
+  }
 
+  // echo "picking: ", idx, " ", leftSize, " ", middleSize, " ", rightSize
 
-  # echo "picking: ", idx, " ", leftSize, " ", middleSize, " ", rightSize
-
-  if idx == 0 and not after:
-    if tree.left.len >= tree.middle.len and tree.left.len >= tree.right.len:
-      return TernaryTreeList[T](
-        kind: ternaryTreeBranch,
+  if (idx == 0 && !after) {
+    if (listLen(tree.left) >= listLen(tree.middle) && listLen(tree.left) >= listLen(tree.right)) {
+      let result: TernaryTreeList<T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
         size: tree.size + 1,
         depth: tree.depth + 1,
-        left: nil,
-        middle: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item),
-        right: tree
-      )
+        left: emptyBranch,
+        middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+        right: tree,
+      };
+      return result;
+    }
+  }
 
-  if idx == tree.len - 1 and after:
-    if tree.right.len >= tree.middle.len and tree.right.len >= tree.left.len:
-      return TernaryTreeList[T](
-        kind: ternaryTreeBranch,
+  if (idx == listLen(tree) - 1 && after) {
+    if (listLen(tree.right) >= listLen(tree.middle) && listLen(tree.right) >= listLen(tree.left)) {
+      let result: TernaryTreeList<T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
         size: tree.size + 1,
         depth: tree.depth + 1,
         left: tree,
-        middle: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item),
-        right: nil
-      )
+        middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+        right: emptyBranch,
+      };
+      return result;
+    }
+  }
 
-  if after and idx == tree.len - 1 and rightSize == 0 and middleSize >= leftSize:
-    return TernaryTreeList[T](
-      kind: ternaryTreeBranch, size: tree.size + 1,
+  if (after && idx == listLen(tree) - 1 && rightSize == 0 && middleSize >= leftSize) {
+    let result: TernaryTreeList<T> = {
+      kind: TernaryTreeKind.ternaryTreeBranch,
+      size: tree.size + 1,
       depth: tree.depth,
       left: tree.left,
       middle: tree.middle,
-      right: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item)
-    )
+      right: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+    };
+    return result;
+  }
 
-  if not after and idx == 0 and leftSize == 0 and middleSize >= rightSize:
-    return TernaryTreeList[T](
-      kind: ternaryTreeBranch, size: tree.size + 1,
+  if (!after && idx == 0 && leftSize == 0 && middleSize >= rightSize) {
+    let result: TernaryTreeList<T> = {
+      kind: TernaryTreeKind.ternaryTreeBranch,
+      size: tree.size + 1,
       depth: tree.depth,
-      left: TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item),
+      left: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
       middle: tree.middle,
-      right: tree.right
-    )
+      right: tree.right,
+    };
+    return result;
+  }
 
-  if idx <= leftSize - 1:
-    let changedBranch = tree.left.insert(idx, item, after)
+  if (idx <= leftSize - 1) {
+    let changedBranch = insert(tree.left, idx, item, after);
 
-    return TernaryTreeList[T](
-      kind: ternaryTreeBranch, size: tree.size + 1,
+    let result: TernaryTreeList<T> = {
+      kind: TernaryTreeKind.ternaryTreeBranch,
+      size: tree.size + 1,
       depth: decideParentDepth(changedBranch, tree.middle, tree.right),
       left: changedBranch,
       middle: tree.middle,
-      right: tree.right
-    )
-  elif idx <= leftSize + middleSize - 1:
-    let changedBranch = tree.middle.insert(idx - leftSize, item, after)
+      right: tree.right,
+    };
+    return result;
+  } else if (idx <= leftSize + middleSize - 1) {
+    let changedBranch = insert(tree.middle, idx - leftSize, item, after);
 
-    return TernaryTreeList[T](
-      kind: ternaryTreeBranch, size: tree.size + 1,
+    let result: TernaryTreeList<T> = {
+      kind: TernaryTreeKind.ternaryTreeBranch,
+      size: tree.size + 1,
       depth: decideParentDepth(tree.left, changedBranch, tree.right),
       left: tree.left,
       middle: changedBranch,
-      right: tree.right
-    )
-  else:
-    let changedBranch = tree.right.insert(idx - leftSize - middleSize, item, after)
+      right: tree.right,
+    };
 
-    return TernaryTreeList[T](
-      kind: ternaryTreeBranch, size: tree.size + 1,
+    return result;
+  } else {
+    let changedBranch = insert(tree.right, idx - leftSize - middleSize, item, after);
+
+    let result: TernaryTreeList<T> = {
+      kind: TernaryTreeKind.ternaryTreeBranch,
+      size: tree.size + 1,
       depth: decideParentDepth(tree.left, tree.middle, changedBranch),
       left: tree.left,
       middle: tree.middle,
-      right: changedBranch
-    )
+      right: changedBranch,
+    };
+    return result;
+  }
+}
 
-proc assocBefore*[T](tree: TernaryTreeList[T], idx: int, item: T, after: bool = false): TernaryTreeList[T] =
-  insert(tree, idx, item, false)
+export function assocBefore<T>(tree: TernaryTreeList<T>, idx: number, item: T, after: boolean = false): TernaryTreeList<T> {
+  return insert(tree, idx, item, false);
+}
 
-proc assocAfter*[T](tree: TernaryTreeList[T], idx: int, item: T, after: bool = false): TernaryTreeList[T] =
-  insert(tree, idx, item, true)
+export function assocAfter<T>(tree: TernaryTreeList<T>, idx: number, item: T, after: boolean = false): TernaryTreeList<T> {
+  return insert(tree, idx, item, true);
+}
 
-# this function mutates original tree to make it more balanced
-proc forceInplaceBalancing*[T](tree: TernaryTreeList[T]): void =
-  # echo "Force inplace balancing of list: ", tree.size
-  var ys = tree.toLeavesSeq()
-  let newTree = initTernaryTreeList(ys.len, 0.int, ys)
-  # let newTree = initTernaryTreeList(ys)
-  tree.left = newTree.left
-  tree.middle = newTree.middle
-  tree.right = newTree.right
-  tree.depth = decideParentDepth(tree.left, tree.middle, tree.right)
+// this function mutates original tree to make it more balanced
+export function forceListInplaceBalancing<T>(tree: TernaryTreeList<T>): void {
+  if (tree.kind === TernaryTreeKind.ternaryTreeBranch) {
+    // echo "Force inplace balancing case list: ", tree.size
+    var ys = toLeavesSeq(tree);
+    let newTree = initTernaryTreeListIter(ys.length, 0, ys) as TernaryTreeListTheBranch<T>;
+    // let newTree = initTernaryTreeList(ys)
+    tree.left = newTree.left;
+    tree.middle = newTree.middle;
+    tree.right = newTree.right;
+    tree.depth = decideParentDepth(tree.left, tree.middle, tree.right);
+  } else {
+    //
+  }
+}
 
-# TODO, need better strategy for detecting
-proc maybeReblance[T](tree: TernaryTreeList[T]): void =
-  let currentDepth = tree.getDepth
-  if currentDepth > 50:
-    if 3.roughIntPow(currentDepth - 50) > tree.size:
-      tree.forceInplaceBalancing
+// TODO, need better strategy for detecting
+export function maybeReblance<T>(tree: TernaryTreeList<T>): void {
+  let currentDepth = getDepth(tree);
+  if (currentDepth > 50) {
+    if (roughIntPow(3, currentDepth - 50) > tree.size) {
+      forceListInplaceBalancing(tree);
+    }
+  }
+}
 
-proc prepend*[T](tree: TernaryTreeList[T], item: T, disableBalancing: bool = false): TernaryTreeList[T] =
-  if tree.isNil or tree.len == 0:
-    return TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item)
-  result = insert(tree, 0, item, false)
+export function prepend<T>(tree: TernaryTreeList<T>, item: T, disableBalancing: boolean = false): TernaryTreeList<T> {
+  if (tree == null || listLen(tree) == 0) {
+    return { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>;
+  }
+  let result = insert(tree, 0, item, false);
 
-  if (not disableBalancing):
-    result.maybeReblance
+  if (!disableBalancing) {
+    maybeReblance(result);
+  }
+  return result;
+}
 
-proc append*[T](tree: TernaryTreeList[T], item: T, disableBalancing: bool = false): TernaryTreeList[T] =
-  if tree.isNil or tree.len == 0:
-    return TernaryTreeList[T](kind: ternaryTreeLeaf, size: 1, value: item)
-  result = insert(tree, tree.len - 1, item, true)
+export function append<T>(tree: TernaryTreeList<T>, item: T, disableBalancing: boolean = false): TernaryTreeList<T> {
+  if (tree == null || listLen(tree) == 0) {
+    return { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>;
+  }
+  let result = insert(tree, listLen(tree) - 1, item, true);
 
-  if (not disableBalancing):
-    result.maybeReblance
+  if (!disableBalancing) {
+    maybeReblance(result);
+  }
+  return result;
+}
 
-proc concat*[T](xs: TernaryTreeList[T], ys: TernaryTreeList[T]): TernaryTreeList[T] =
-  if xs.isNil or xs.len == 0:
-    return ys
-  if ys.isNil or ys.len == 0:
-    return xs
-  result = TernaryTreeList[T](
-    kind: ternaryTreeBranch, size: xs.size + ys.size,
-    depth: decideParentDepth(xs, nil, ys),
+export function concat<T>(xs: TernaryTreeList<T>, ys: TernaryTreeList<T>): TernaryTreeList<T> {
+  if (xs == null || listLen(xs) == 0) return ys;
+  if (ys == null || listLen(ys) == 0) return xs;
+  let result = {
+    kind: TernaryTreeKind.ternaryTreeBranch,
+    size: xs.size + ys.size,
+    depth: decideParentDepth(xs, emptyBranch, ys),
     left: xs,
-    middle: nil,
-    right: ys
-  )
-  result.maybeReblance
+    middle: emptyBranch,
+    right: ys,
+  } as TernaryTreeList<T>;
+  maybeReblance(result);
+  return result;
+}
 
-proc sameShape*[T](xs: TernaryTreeList[T], ys: TernaryTreeList[T]): bool =
-  if xs.isNil:
-    if ys.isNil:
-      return true
-    else:
-      return false
-  if ys.isNil:
-    return false
+export function sameListShape<T>(xs: TernaryTreeList<T>, ys: TernaryTreeList<T>): boolean {
+  if (xs == null) {
+    if (ys == null) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  if (ys == null) {
+    return false;
+  }
 
-  if xs.len != ys.len:
-    return false
+  if (listLen(xs) != listLen(ys)) {
+    return false;
+  }
 
-  if xs.kind != ys.kind:
-    return false
+  if (xs.kind != ys.kind) {
+    return false;
+  }
 
-  if xs.kind == ternaryTreeLeaf:
-    if xs.value != ys.value:
-      return false
-    else:
-      return true
+  if (xs.kind == TernaryTreeKind.ternaryTreeLeaf && ys.kind == TernaryTreeKind.ternaryTreeLeaf) {
+    if (xs.value != ys.value) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+  if (xs.kind == TernaryTreeKind.ternaryTreeBranch && ys.kind == TernaryTreeKind.ternaryTreeBranch) {
+    if (!sameListShape(xs.left, ys.left)) return false;
 
-  if not xs.left.sameShape(ys.left):
-    return false
+    if (!sameListShape(xs.middle, ys.middle)) return false;
 
-  if not xs.middle.sameShape(ys.middle):
-    return false
+    if (!sameListShape(xs.right, ys.right)) return false;
 
-  if not xs.right.sameShape(ys.right):
-    return false
+    return true;
+  }
 
-  return true
+  return false;
+}
 
-proc identical*[T](xs: TernaryTreeList[T], ys: TernaryTreeList[T]): bool =
-  cast[pointer](xs) == cast[pointer](ys)
+function identical<T>(xs: TernaryTreeList<T>, ys: TernaryTreeList<T>): boolean {
+  return xs === ys;
+}
 
-proc `==`*[T](xs: TernaryTreeList[T], ys: TernaryTreeList[T]): bool =
-  if xs.len != ys.len:
-    return false
+export function listEqual<T>(xs: TernaryTreeList<T>, ys: TernaryTreeList<T>): boolean {
+  if (identical(xs, ys)) {
+    return true;
+  }
+  if (listLen(xs) != listLen(ys)) {
+    return false;
+  }
 
-  if xs.identical(ys):
-    return true
+  for (let idx = 0; idx < listLen(xs); i++) {
+    if (loopGetList(xs, idx) != loopGetList(ys, idx)) {
+      return false;
+    }
+  }
 
-  for idx in 0..<xs.len:
-    if xs.loopGet(idx) != ys.loopGet(idx):
-      return false
+  return true;
+}
 
-  return true
+export function checkListStructure<T>(tree: TernaryTreeList<T>): boolean {
+  if (tree == null) {
+    return true;
+  } else {
+    switch (tree.kind) {
+      case TernaryTreeKind.ternaryTreeLeaf:
+        if (tree.size != 1) {
+          throw new Error(`Bad size at node ${formatListInline(tree)}`);
+        }
+        break;
+      case TernaryTreeKind.ternaryTreeBranch: {
+        if (tree.size != listLen(tree.left) + listLen(tree.middle) + listLen(tree.right)) {
+          throw new Error(`Bad size at branch ${formatListInline(tree)}`);
+        }
 
-proc checkStructure*[T](tree: TernaryTreeList[T]): bool =
-  if tree.isNil:
-    return true
-  case tree.kind
-  of ternaryTreeLeaf:
-    if tree.size != 1:
-      raise newException(TernaryTreeError, fmt"Bad size at node {tree.formatInline}")
-  of ternaryTreeBranch:
-    if tree.size != tree.left.len + tree.middle.len + tree.right.len:
-      raise newException(TernaryTreeError, fmt"Bad size at branch {tree.formatInline}")
+        if (tree.depth != decideParentDepth(tree.left, tree.middle, tree.right)) {
+          let x = decideParentDepth(tree.left, tree.middle, tree.right);
+          throw new Error(`Bad depth at branch ${formatListInline(tree)}`);
+        }
 
-    if tree.depth != decideParentDepth(tree.left, tree.middle, tree.right):
-      let x = decideParentDepth(tree.left, tree.middle, tree.right)
-      raise newException(TernaryTreeError, fmt"Bad depth at branch {tree.formatInline}")
+        checkListStructure(tree.left);
+        checkListStructure(tree.middle);
+        checkListStructure(tree.right);
+        break;
+      }
+    }
 
-    discard tree.left.checkStructure
-    discard tree.middle.checkStructure
-    discard tree.right.checkStructure
+    return true;
+  }
+}
 
-  return true
+// excludes value at endIdx, kept aligned with JS & Clojure
+export function slice<T>(tree: TernaryTreeList<T>, startIdx: number, endIdx: number): TernaryTreeList<T> {
+  // echo "slice {tree.formatListInline}: {startIdx}..{endIdx}"
+  if (endIdx > listLen(tree)) {
+    throw new Error("Slice range too large {endIdx} for {tree}");
+  }
+  if (startIdx < 0) {
+    throw new Error("Slice range too small {startIdx} for {tree}");
+  }
+  if (startIdx > endIdx) {
+    throw new Error("Invalid slice range {startIdx}..{endIdx} for {tree}");
+  }
+  if (startIdx == endIdx) {
+    return { kind: TernaryTreeKind.ternaryTreeBranch, size: 0, depth: 0 } as TernaryTreeList<T>;
+  }
 
-# excludes value at endIdx, kept aligned with JS & Clojure
-proc slice*[T](tree: TernaryTreeList[T], startIdx: int, endIdx: int): TernaryTreeList[T] =
-  # echo fmt"slice {tree.formatInline}: {startIdx}..{endIdx}"
-  if endIdx > tree.len:
-    raise newException(TernaryTreeError, fmt"Slice range too large {endIdx} for {tree}")
-  if startIdx < 0:
-    raise newException(TernaryTreeError, fmt"Slice range too small {startIdx} for {tree}")
-  if startIdx > endIdx:
-    raise newException(TernaryTreeError, fmt"Invalid slice range {startIdx}..{endIdx} for {tree}")
-  if startIdx == endIdx:
-    return TernaryTreeList[T](kind: ternaryTreeBranch, size: 0, depth: 0)
+  if (tree.kind == TernaryTreeKind.ternaryTreeLeaf)
+    if (startIdx == 0 && endIdx == 1) {
+      return tree;
+    } else {
+      throw new Error(`Invalid slice range for a leaf: ${startIdx} ${endIdx}`);
+    }
 
-  if tree.kind == ternaryTreeLeaf:
-    if startIdx == 0 and endIdx == 1:
-      return tree
-    else:
-      raise newException(TernaryTreeError, fmt"Invalid slice range for a leaf: {startIdx} {endIdx}")
+  if (startIdx == 0 && endIdx == listLen(tree)) {
+    return tree;
+  }
 
-  if startIdx == 0 and endIdx == tree.len:
-    return tree
+  let leftSize = listLen(tree.left);
+  let middleSize = listLen(tree.middle);
+  let rightSize = listLen(tree.right);
 
-  let leftSize = tree.left.len
-  let middleSize = tree.middle.len
-  let rightSize = tree.right.len
+  // echo "sizes: {leftSize} {middleSize} {rightSize}"
 
-  # echo fmt"sizes: {leftSize} {middleSize} {rightSize}"
+  if (startIdx >= leftSize + middleSize) return slice(tree.right, startIdx - leftSize - middleSize, endIdx - leftSize - middleSize);
+  if (startIdx >= leftSize)
+    if (endIdx <= leftSize + middleSize) return slice(tree.middle, startIdx - leftSize, endIdx - leftSize);
+    else {
+      let middleCut = slice(tree.middle, startIdx - leftSize, middleSize);
+      let rightCut = slice(tree.right, 0, endIdx - leftSize - middleSize);
+      return concat(middleCut, rightCut);
+    }
 
-  if startIdx >= leftSize + middleSize:
-    return tree.right.slice(startIdx - leftSize - middleSize, endIdx - leftSize - middleSize)
-  if startIdx >= leftSize:
-    if endIdx <= leftSize + middleSize:
-      return tree.middle.slice(startIdx - leftSize, endIdx - leftSize)
-    else:
-      let middleCut = tree.middle.slice(startIdx - leftSize, middleSize)
-      let rightCut = tree.right.slice(0, endIdx - leftSize - middleSize)
-      return middleCut.concat(rightCut)
+  if (endIdx <= leftSize) return slice(tree.left, startIdx, endIdx);
 
-  if endIdx <= leftSize:
-    return tree.left.slice(startIdx, endIdx)
+  if (endIdx <= leftSize + middleSize) {
+    let leftCut = slice(tree.left, startIdx, leftSize);
+    let middleCut = slice(tree.middle, 0, endIdx - leftSize);
+    return concat(leftCut, middleCut);
+  }
 
-  if endIdx <= leftSize + middleSize:
-    let leftCut = tree.left.slice(startIdx, leftSize)
-    let middleCut = tree.middle.slice(0, endIdx - leftSize)
-    return leftCut.concat(middleCut)
+  if (endIdx <= leftSize + middleSize + rightSize) {
+    let leftCut = slice(tree.left, startIdx, leftSize);
+    let rightCut = slice(tree.right, 0, endIdx - leftSize - middleSize);
+    return concat(concat(leftCut, tree.middle), rightCut);
+  }
+  throw new Error("Unknown");
+}
 
-  if endIdx <= leftSize + middleSize + rightSize:
-    let leftCut = tree.left.slice(startIdx, leftSize)
-    let rightCut = tree.right.slice(0, endIdx - leftSize - middleSize)
-    return leftCut.concat(tree.middle).concat(rightCut)
+export function reverse<T>(tree: TernaryTreeList<T>): TernaryTreeList<T> {
+  if (tree == null) {
+    return tree;
+  }
 
-proc reverse*[T](tree: TernaryTreeList[T]): TernaryTreeList[T] =
-  if tree.isNil:
-    return tree
-
-  case tree.kind
-  of ternaryTreeLeaf:
-    return tree
-  of ternaryTreeBranch:
-    return TernaryTreeList[T](
-      kind: ternaryTreeBranch, size: tree.size,
-      depth: tree.depth,
-      left: tree.right.reverse,
-      middle: tree.middle.reverse,
-      right: tree.left.reverse
-    )
+  switch (tree.kind) {
+    case TernaryTreeKind.ternaryTreeLeaf:
+      return tree;
+    case TernaryTreeKind.ternaryTreeBranch: {
+      let result: TernaryTreeList<T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        size: tree.size,
+        depth: tree.depth,
+        left: reverse(tree.right),
+        middle: reverse(tree.middle),
+        right: reverse(tree.left),
+      };
+      return result;
+    }
+  }
+}
