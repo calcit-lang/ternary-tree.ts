@@ -1,4 +1,4 @@
-import { Hash, valueHash } from "hash";
+import { Hash, valueHash } from "./hash";
 import {
   TernaryTreeMap,
   TernaryTreeKind,

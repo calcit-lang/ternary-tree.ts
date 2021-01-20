@@ -32,7 +32,7 @@ export function initTernaryTreeListIter<T>(size: number, offset: number, xs: /* 
       return { kind: TernaryTreeKind.ternaryTreeBranch, size: 0, depth: 1, left: emptyBranch, middle: emptyBranch, right: emptyBranch } as TernaryTreeList<T>;
     }
     case 1:
-      xs[offset];
+      return xs[offset];
     case 2: {
       let left = xs[offset];
       let right = xs[offset + 1];
@@ -93,7 +93,7 @@ export function initEmptyTernaryTreeList<T>(): TernaryTreeList<T> {
 }
 
 export function listToString<T>(tree: TernaryTreeList<T>): string {
-  return `TernaryTreeList[{tree.size}, ...]`;
+  return `TernaryTreeList[${tree.size}, ...]`;
 }
 
 export function listLen<T>(tree: TernaryTreeList<T>): number {
@@ -116,7 +116,7 @@ export function formatListInline<T>(tree: TernaryTreeList<T>): string {
   if (tree == null) return "_";
   switch (tree.kind) {
     case TernaryTreeKind.ternaryTreeLeaf:
-      return listToString<T>(tree);
+      return `${tree.value}`;
     case TernaryTreeKind.ternaryTreeBranch:
       return "(" + formatListInline(tree.left) + " " + formatListInline(tree.middle) + " " + formatListInline(tree.right) + ")";
     // "(" & tree.left.formatListInline & " " & tree.middle.formatListInline & " " & tree.right.formatListInline & ")@{tree.depth} " & "{tree.left.getDepth} {tree.middle.getDepth} {tree.right.getDepth}..."
@@ -279,7 +279,7 @@ export function* listItems<T>(tree: TernaryTreeList<T>): Generator<T> {
   // for x in seqItems:
   //   yield x
 
-  for (let idx = 0; i < listLen(tree); i++) {
+  for (let idx = 0; idx < listLen(tree); idx++) {
     yield loopGetList(tree, idx);
   }
 }
@@ -499,10 +499,8 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
       size: 1,
       value: loopGetList(result, 0),
     };
-    return result;
   }
-
-  throw new Error("Unknown");
+  return result;
 }
 
 export function rest<T>(tree: TernaryTreeList<T>): TernaryTreeList<T> {
@@ -618,7 +616,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
           kind: TernaryTreeKind.ternaryTreeBranch,
           size: 2,
           depth: getDepth(tree.middle) + 1,
-          left: emptyData,
+          left: emptyBranch,
           middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
           right: tree.left,
         };
@@ -978,7 +976,7 @@ export function listEqual<T>(xs: TernaryTreeList<T>, ys: TernaryTreeList<T>): bo
     return false;
   }
 
-  for (let idx = 0; idx < listLen(xs); i++) {
+  for (let idx = 0; idx < listLen(xs); idx++) {
     if (loopGetList(xs, idx) != loopGetList(ys, idx)) {
       return false;
     }

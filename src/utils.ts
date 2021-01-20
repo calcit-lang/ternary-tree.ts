@@ -4,7 +4,7 @@ export let roughIntPow = (x: number, times: number): number => {
   }
 
   let result = 1;
-  for (let idx = 0; idx < times; i++) {
+  for (let idx = 0; idx < times; idx++) {
     result = result * x;
   }
   return result;
@@ -50,7 +50,11 @@ export let test = (name: string, cb: () => void): void => {
   cb();
 };
 
-export let check = (x: boolean): void => {};
+export let check = (x: boolean): void => {
+  if (!x) {
+    throw new Error("Test failed");
+  }
+};
 
 export let cmp = (x: any, y: any) => {
   if (x < y) {
@@ -60,4 +64,16 @@ export let cmp = (x: any, y: any) => {
     return 1;
   }
   return 0;
+};
+
+export let arrayEqual = <T>(xs: Array<T>, ys: Array<T>): boolean => {
+  if (xs.length != ys.length) {
+    return false;
+  }
+  for (let idx in xs) {
+    if (xs[idx] !== ys[idx]) {
+      return false;
+    }
+  }
+  return true;
 };

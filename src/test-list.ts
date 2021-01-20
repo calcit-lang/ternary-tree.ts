@@ -28,9 +28,10 @@ import {
   last,
   listLen,
   forceListInplaceBalancing,
-} from "../src/list";
+  listEqual,
+} from "./list";
 
-import { test, check } from "../src/utils";
+import { test, check, arrayEqual } from "./utils";
 
 test("init list", () => {
   check(
@@ -45,10 +46,10 @@ test("init list", () => {
   check(checkListStructure(data11));
 
   check(formatListInline(data11) == "((1 (2 _ 3) 4) (5 6 7) (8 (9 _ 10) 11))");
-  check(origin11 == listToSeq(data11));
+  check(arrayEqual<number>(origin11, listToSeq(data11)));
 
   let emptyXs = new Array<number>(0);
-  check(initEmptyTernaryTreeList<number>() == initTernaryTreeList(emptyXs));
+  check(listEqual(initEmptyTernaryTreeList<number>(), initTernaryTreeList(emptyXs)));
 });
 
 test("list operations", () => {
@@ -139,10 +140,10 @@ test("check(equality", () => {
   check(sameListShape(data4, data4n) == true);
   check(sameListShape(data4, data4Made) == false);
 
-  check(data4 == data4n);
-  check(data4 == data4Made);
-  check(data4n == data4Made);
-  check(data4 !== data4Made);
+  check(listEqual(data4, data4n));
+  check(listEqual(data4, data4Made));
+  check(listEqual(data4n, data4Made));
+  check(data4 !== data4Made); // identical false
 });
 
 test("force balancing", () => {
@@ -162,7 +163,7 @@ test("iterator", () => {
   let data4 = initTernaryTreeList(origin4);
 
   var i = 0;
-  for (let item in listItems(data4)) {
+  for (let item of listItems(data4)) {
     i = i + 1;
   }
 
@@ -202,8 +203,8 @@ test("slices", () => {
   }
 
   for (let i = 0; i < 40; i++) {
-    for (let j = 0; j < 40; j++) {
-      check(listToSeq(slice(data, i, j)) == list40.slice(i, j));
+    for (let j = i; j < 40; j++) {
+      check(arrayEqual<number>(listToSeq(slice(data, i, j)), list40.slice(i, j)));
     }
   }
 });
@@ -211,7 +212,7 @@ test("slices", () => {
 test("reverse", () => {
   let data = initTernaryTreeList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   let reversedData = reverse(data);
-  check(listToSeq(data).reverse() == listToSeq(reversedData));
+  check(arrayEqual(listToSeq(data).reverse(), listToSeq(reversedData)));
   check(checkListStructure(reversedData));
 });
 
