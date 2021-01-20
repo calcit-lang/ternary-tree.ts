@@ -1,5 +1,5 @@
-import { some, none } from "../src/types";
-import { test, check, cmp } from "../src/utils";
+import { some, none } from "./types";
+import { test, check, cmp } from "./utils";
 import {
   initTernaryTreeMap,
   mapKeys,
@@ -20,8 +20,8 @@ import {
   mapLen,
   mapToString,
   mapEach,
-} from "../src/map";
-import { valueHash } from "hash";
+} from "./map";
+import { valueHash } from "./hash";
 
 test("init map", () => {
   var dict: Map<string, number> = new Map();
