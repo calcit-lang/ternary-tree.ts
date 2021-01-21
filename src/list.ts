@@ -1,6 +1,6 @@
 import { RefInt, TernaryTreeKind, TernaryTreeList, TernaryTreeListTheBranch } from "./types";
 import {} from "./map";
-import { divideTernarySizes, roughIntPow } from "./utils";
+import { dataEqual, divideTernarySizes, roughIntPow } from "./utils";
 
 // just get, will not compute recursively
 export function getDepth<T>(tree: TernaryTreeList<T>): number {
@@ -105,15 +105,17 @@ export function listLen<T>(tree: TernaryTreeList<T>): number {
 }
 
 export function isLeaf<T>(tree: TernaryTreeList<T>): boolean {
-  return tree.kind == TernaryTreeKind.ternaryTreeLeaf;
+  return tree.kind === TernaryTreeKind.ternaryTreeLeaf;
 }
 
 export function isBranch<T>(tree: TernaryTreeList<T>): boolean {
-  return tree.kind == TernaryTreeKind.ternaryTreeBranch;
+  return tree.kind === TernaryTreeKind.ternaryTreeBranch;
 }
 
 export function formatListInline<T>(tree: TernaryTreeList<T>): string {
-  if (tree == null) return "_";
+  if (tree == null) {
+    return "_";
+  }
   switch (tree.kind) {
     case TernaryTreeKind.ternaryTreeLeaf:
       return `${tree.value}`;
@@ -157,7 +159,7 @@ export function listToSeq<T>(tree: TernaryTreeList<T>): Array<T> {
   return acc;
 }
 
-export function each<T>(tree: TernaryTreeList<T>, f: (x: T) => void): void {
+export function listEach<T>(tree: TernaryTreeList<T>, f: (x: T) => void): void {
   if (tree == null) {
     //
   } else {
@@ -168,13 +170,13 @@ export function each<T>(tree: TernaryTreeList<T>, f: (x: T) => void): void {
       }
       case TernaryTreeKind.ternaryTreeBranch: {
         if (tree.left != null) {
-          each(tree.left, f);
+          listEach(tree.left, f);
         }
         if (tree.middle != null) {
-          each(tree.middle, f);
+          listEach(tree.middle, f);
         }
         if (tree.right != null) {
-          each(tree.right, f);
+          listEach(tree.right, f);
         }
         break;
       }
@@ -220,7 +222,7 @@ export function indexOf<T>(tree: TernaryTreeList<T>, item: T): number {
   }
   switch (tree.kind) {
     case TernaryTreeKind.ternaryTreeLeaf:
-      if (item == tree.value) {
+      if (dataEqual(item, tree.value)) {
         return 0;
       }
     default:
@@ -242,7 +244,7 @@ export function indexOf<T>(tree: TernaryTreeList<T>, item: T): number {
   }
 }
 
-export function writeLeavesSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<TernaryTreeList<T>>, idx: RefInt): void {
+function writeLeavesSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<TernaryTreeList<T>>, idx: RefInt): void {
   if (tree == null) {
     //
   } else {
@@ -253,9 +255,15 @@ export function writeLeavesSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array
         break;
       }
       case TernaryTreeKind.ternaryTreeBranch: {
-        if (tree.left != null) writeLeavesSeq(tree.left, acc, idx);
-        if (tree.middle != null) writeLeavesSeq(tree.middle, acc, idx);
-        if (tree.right != null) writeLeavesSeq(tree.right, acc, idx);
+        if (tree.left != null) {
+          writeLeavesSeq(tree.left, acc, idx);
+        }
+        if (tree.middle != null) {
+          writeLeavesSeq(tree.middle, acc, idx);
+        }
+        if (tree.right != null) {
+          writeLeavesSeq(tree.right, acc, idx);
+        }
         break;
       }
       default: {
@@ -301,8 +309,8 @@ export function loopGetList<T>(originalTree: TernaryTreeList<T>, originalIdx: nu
       throw new Error("Cannot index negative number");
     }
 
-    if (tree.kind == TernaryTreeKind.ternaryTreeLeaf) {
-      if (idx == 0) {
+    if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
+      if (idx === 0) {
         return tree.value;
       } else {
         throw new Error("Cannot get from leaf with index {idx}");
@@ -317,7 +325,7 @@ export function loopGetList<T>(originalTree: TernaryTreeList<T>, originalIdx: nu
     let middleSize = tree.middle == null ? 0 : tree.middle.size;
     let rightSize = tree.right == null ? 0 : tree.right.size;
 
-    if (leftSize + middleSize + rightSize != tree.size) {
+    if (leftSize + middleSize + rightSize !== tree.size) {
       throw new Error("tree.size does not match sum case branch sizes");
     }
 
@@ -359,8 +367,8 @@ export function assocList<T>(tree: TernaryTreeList<T>, idx: number, item: T): Te
     throw new Error("Index too large");
   }
 
-  if (tree.kind == TernaryTreeKind.ternaryTreeLeaf) {
-    if (idx == 0) {
+  if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
+    if (idx === 0) {
       return { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>;
     } else {
       throw new Error("Cannot get from leaf with index {idx}");
@@ -371,7 +379,7 @@ export function assocList<T>(tree: TernaryTreeList<T>, idx: number, item: T): Te
   let middleSize = listLen(tree.middle);
   let rightSize = listLen(tree.right);
 
-  if (leftSize + middleSize + rightSize != tree.size) throw new Error("tree.size does not match sum case branch sizes");
+  if (leftSize + middleSize + rightSize !== tree.size) throw new Error("tree.size does not match sum case branch sizes");
 
   if (idx <= leftSize - 1) {
     let changedBranch = assocList(tree.left, idx, item);
@@ -418,7 +426,7 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
     throw new Error("Index is negative {idx}");
   }
 
-  if (listLen(tree) == 0) {
+  if (listLen(tree) === 0) {
     throw new Error("Cannot remove from empty list");
   }
 
@@ -426,7 +434,7 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
     throw new Error("Index too large {idx}");
   }
 
-  if (listLen(tree) == 1) {
+  if (listLen(tree) === 1) {
     let result: TernaryTreeList<T> = {
       kind: TernaryTreeKind.ternaryTreeBranch,
       size: 0,
@@ -438,7 +446,7 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
     return result;
   }
 
-  if (tree.kind == TernaryTreeKind.ternaryTreeLeaf) {
+  if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
     throw new Error("dissoc should be handled at branches");
   }
 
@@ -446,7 +454,7 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
   let middleSize = listLen(tree.middle);
   let rightSize = listLen(tree.right);
 
-  if (leftSize + middleSize + rightSize != tree.size) {
+  if (leftSize + middleSize + rightSize !== tree.size) {
     throw new Error("tree.size does not match sum case branch sizes");
   }
 
@@ -454,7 +462,7 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
 
   if (idx <= leftSize - 1) {
     let changedBranch = dissocList(tree.left, idx);
-    if (changedBranch.size == 0) {
+    if (changedBranch.size === 0) {
       changedBranch = emptyBranch;
     }
     result = {
@@ -467,7 +475,7 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
     };
   } else if (idx <= leftSize + middleSize - 1) {
     let changedBranch = dissocList(tree.middle, idx - leftSize);
-    if (changedBranch.size == 0) {
+    if (changedBranch.size === 0) {
       changedBranch = emptyBranch;
     }
     result = {
@@ -480,7 +488,7 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
     };
   } else {
     let changedBranch = dissocList(tree.right, idx - leftSize - middleSize);
-    if (changedBranch.size == 0) {
+    if (changedBranch.size === 0) {
       changedBranch = emptyBranch;
     }
     result = {
@@ -493,7 +501,7 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
     };
   }
   // TODO
-  if (listLen(result) == 1) {
+  if (listLen(result) === 1) {
     result = {
       kind: TernaryTreeKind.ternaryTreeLeaf,
       size: 1,
@@ -529,11 +537,11 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
   if (tree == null) {
     throw new Error("Cannot insert into null");
   }
-  if (listLen(tree) == 0) {
+  if (listLen(tree) === 0) {
     throw new Error("Empty node is not a correct position for inserting");
   }
 
-  if (tree.kind == TernaryTreeKind.ternaryTreeLeaf) {
+  if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
     if (after) {
       let result: TernaryTreeList<T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
@@ -557,7 +565,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
     }
   }
 
-  if (listLen(tree) == 1) {
+  if (listLen(tree) === 1) {
     if (after)
       if (tree.left != null) {
         let result: TernaryTreeList<T> = {
@@ -625,7 +633,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
     }
   }
 
-  if (listLen(tree) == 2) {
+  if (listLen(tree) === 2) {
     if (after) {
       if (tree.right == null) {
         let result: TernaryTreeList<T> = {
@@ -638,7 +646,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
         };
         return result;
       } else if (tree.middle == null) {
-        if (idx == 0) {
+        if (idx === 0) {
           let result: TernaryTreeList<T> = {
             kind: TernaryTreeKind.ternaryTreeBranch,
             size: 3,
@@ -648,7 +656,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
             right: tree.right,
           };
           return result;
-        } else if (idx == 1) {
+        } else if (idx === 1) {
           let result: TernaryTreeList<T> = {
             kind: TernaryTreeKind.ternaryTreeBranch,
             size: 3,
@@ -662,7 +670,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
           throw new Error(`Unexpected idx: ${idx}`);
         }
       } else {
-        if (idx == 0) {
+        if (idx === 0) {
           let result: TernaryTreeList<T> = {
             kind: TernaryTreeKind.ternaryTreeBranch,
             size: 3,
@@ -672,7 +680,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
             right: tree.right,
           };
           return result;
-        } else if (idx == 1) {
+        } else if (idx === 1) {
           let result: TernaryTreeList<T> = {
             kind: TernaryTreeKind.ternaryTreeBranch,
             size: 3,
@@ -698,7 +706,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
         };
         return result;
       } else if (tree.middle == null) {
-        if (idx == 0) {
+        if (idx === 0) {
           let result: TernaryTreeList<T> = {
             kind: TernaryTreeKind.ternaryTreeBranch,
             size: 3,
@@ -708,7 +716,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
             right: tree.right,
           };
           return result;
-        } else if (idx == 1) {
+        } else if (idx === 1) {
           let result: TernaryTreeList<T> = {
             kind: TernaryTreeKind.ternaryTreeBranch,
             size: 3,
@@ -722,7 +730,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
           throw new Error("Unexpected idx: {idx}");
         }
       } else {
-        if (idx == 0) {
+        if (idx === 0) {
           let result: TernaryTreeList<T> = {
             kind: TernaryTreeKind.ternaryTreeBranch,
             size: 3,
@@ -732,7 +740,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
             right: tree.middle,
           };
           return result;
-        } else if (idx == 1) {
+        } else if (idx === 1) {
           let result: TernaryTreeList<T> = {
             kind: TernaryTreeKind.ternaryTreeBranch,
             size: 3,
@@ -753,13 +761,13 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
   let middleSize = listLen(tree.middle);
   let rightSize = listLen(tree.right);
 
-  if (leftSize + middleSize + rightSize != tree.size) {
+  if (leftSize + middleSize + rightSize !== tree.size) {
     throw new Error("tree.size does not match sum case branch sizes");
   }
 
   // echo "picking: ", idx, " ", leftSize, " ", middleSize, " ", rightSize
 
-  if (idx == 0 && !after) {
+  if (idx === 0 && !after) {
     if (listLen(tree.left) >= listLen(tree.middle) && listLen(tree.left) >= listLen(tree.right)) {
       let result: TernaryTreeList<T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
@@ -773,7 +781,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
     }
   }
 
-  if (idx == listLen(tree) - 1 && after) {
+  if (idx === listLen(tree) - 1 && after) {
     if (listLen(tree.right) >= listLen(tree.middle) && listLen(tree.right) >= listLen(tree.left)) {
       let result: TernaryTreeList<T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
@@ -787,7 +795,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
     }
   }
 
-  if (after && idx == listLen(tree) - 1 && rightSize == 0 && middleSize >= leftSize) {
+  if (after && idx === listLen(tree) - 1 && rightSize === 0 && middleSize >= leftSize) {
     let result: TernaryTreeList<T> = {
       kind: TernaryTreeKind.ternaryTreeBranch,
       size: tree.size + 1,
@@ -799,7 +807,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
     return result;
   }
 
-  if (!after && idx == 0 && leftSize == 0 && middleSize >= rightSize) {
+  if (!after && idx === 0 && leftSize === 0 && middleSize >= rightSize) {
     let result: TernaryTreeList<T> = {
       kind: TernaryTreeKind.ternaryTreeBranch,
       size: tree.size + 1,
@@ -876,7 +884,7 @@ export function forceListInplaceBalancing<T>(tree: TernaryTreeList<T>): void {
 }
 
 // TODO, need better strategy for detecting
-export function maybeReblance<T>(tree: TernaryTreeList<T>): void {
+function maybeReblance<T>(tree: TernaryTreeList<T>): void {
   let currentDepth = getDepth(tree);
   if (currentDepth > 50) {
     if (roughIntPow(3, currentDepth - 50) > tree.size) {
@@ -886,7 +894,7 @@ export function maybeReblance<T>(tree: TernaryTreeList<T>): void {
 }
 
 export function prepend<T>(tree: TernaryTreeList<T>, item: T, disableBalancing: boolean = false): TernaryTreeList<T> {
-  if (tree == null || listLen(tree) == 0) {
+  if (tree == null || listLen(tree) === 0) {
     return { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>;
   }
   let result = insert(tree, 0, item, false);
@@ -898,7 +906,7 @@ export function prepend<T>(tree: TernaryTreeList<T>, item: T, disableBalancing: 
 }
 
 export function append<T>(tree: TernaryTreeList<T>, item: T, disableBalancing: boolean = false): TernaryTreeList<T> {
-  if (tree == null || listLen(tree) == 0) {
+  if (tree == null || listLen(tree) === 0) {
     return { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>;
   }
   let result = insert(tree, listLen(tree) - 1, item, true);
@@ -910,8 +918,8 @@ export function append<T>(tree: TernaryTreeList<T>, item: T, disableBalancing: b
 }
 
 export function concat<T>(xs: TernaryTreeList<T>, ys: TernaryTreeList<T>): TernaryTreeList<T> {
-  if (xs == null || listLen(xs) == 0) return ys;
-  if (ys == null || listLen(ys) == 0) return xs;
+  if (xs == null || listLen(xs) === 0) return ys;
+  if (ys == null || listLen(ys) === 0) return xs;
   let result = {
     kind: TernaryTreeKind.ternaryTreeBranch,
     size: xs.size + ys.size,
@@ -936,22 +944,22 @@ export function sameListShape<T>(xs: TernaryTreeList<T>, ys: TernaryTreeList<T>)
     return false;
   }
 
-  if (listLen(xs) != listLen(ys)) {
+  if (listLen(xs) !== listLen(ys)) {
     return false;
   }
 
-  if (xs.kind != ys.kind) {
+  if (xs.kind !== ys.kind) {
     return false;
   }
 
-  if (xs.kind == TernaryTreeKind.ternaryTreeLeaf && ys.kind == TernaryTreeKind.ternaryTreeLeaf) {
-    if (xs.value != ys.value) {
+  if (xs.kind === TernaryTreeKind.ternaryTreeLeaf && ys.kind === TernaryTreeKind.ternaryTreeLeaf) {
+    if (!dataEqual(xs.value, ys.value)) {
       return false;
     } else {
       return true;
     }
   }
-  if (xs.kind == TernaryTreeKind.ternaryTreeBranch && ys.kind == TernaryTreeKind.ternaryTreeBranch) {
+  if (xs.kind === TernaryTreeKind.ternaryTreeBranch && ys.kind === TernaryTreeKind.ternaryTreeBranch) {
     if (!sameListShape(xs.left, ys.left)) return false;
 
     if (!sameListShape(xs.middle, ys.middle)) return false;
@@ -964,20 +972,16 @@ export function sameListShape<T>(xs: TernaryTreeList<T>, ys: TernaryTreeList<T>)
   return false;
 }
 
-function identical<T>(xs: TernaryTreeList<T>, ys: TernaryTreeList<T>): boolean {
-  return xs === ys;
-}
-
 export function listEqual<T>(xs: TernaryTreeList<T>, ys: TernaryTreeList<T>): boolean {
-  if (identical(xs, ys)) {
+  if (xs === ys) {
     return true;
   }
-  if (listLen(xs) != listLen(ys)) {
+  if (listLen(xs) !== listLen(ys)) {
     return false;
   }
 
   for (let idx = 0; idx < listLen(xs); idx++) {
-    if (loopGetList(xs, idx) != loopGetList(ys, idx)) {
+    if (!dataEqual(loopGetList(xs, idx), loopGetList(ys, idx))) {
       return false;
     }
   }
@@ -991,16 +995,16 @@ export function checkListStructure<T>(tree: TernaryTreeList<T>): boolean {
   } else {
     switch (tree.kind) {
       case TernaryTreeKind.ternaryTreeLeaf:
-        if (tree.size != 1) {
+        if (tree.size !== 1) {
           throw new Error(`Bad size at node ${formatListInline(tree)}`);
         }
         break;
       case TernaryTreeKind.ternaryTreeBranch: {
-        if (tree.size != listLen(tree.left) + listLen(tree.middle) + listLen(tree.right)) {
+        if (tree.size !== listLen(tree.left) + listLen(tree.middle) + listLen(tree.right)) {
           throw new Error(`Bad size at branch ${formatListInline(tree)}`);
         }
 
-        if (tree.depth != decideParentDepth(tree.left, tree.middle, tree.right)) {
+        if (tree.depth !== decideParentDepth(tree.left, tree.middle, tree.right)) {
           let x = decideParentDepth(tree.left, tree.middle, tree.right);
           throw new Error(`Bad depth at branch ${formatListInline(tree)}`);
         }
@@ -1028,18 +1032,18 @@ export function slice<T>(tree: TernaryTreeList<T>, startIdx: number, endIdx: num
   if (startIdx > endIdx) {
     throw new Error("Invalid slice range {startIdx}..{endIdx} for {tree}");
   }
-  if (startIdx == endIdx) {
+  if (startIdx === endIdx) {
     return { kind: TernaryTreeKind.ternaryTreeBranch, size: 0, depth: 0 } as TernaryTreeList<T>;
   }
 
-  if (tree.kind == TernaryTreeKind.ternaryTreeLeaf)
-    if (startIdx == 0 && endIdx == 1) {
+  if (tree.kind === TernaryTreeKind.ternaryTreeLeaf)
+    if (startIdx === 0 && endIdx === 1) {
       return tree;
     } else {
       throw new Error(`Invalid slice range for a leaf: ${startIdx} ${endIdx}`);
     }
 
-  if (startIdx == 0 && endIdx == listLen(tree)) {
+  if (startIdx === 0 && endIdx === listLen(tree)) {
     return tree;
   }
 
