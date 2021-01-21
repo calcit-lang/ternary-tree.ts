@@ -272,7 +272,7 @@ export function collectHashSortedSeq<K, T>(tree: TernaryTreeMap<K, T>, acc: /* v
     switch (tree.kind) {
       case TernaryTreeKind.ternaryTreeLeaf: {
         for (let item of tree.elements) {
-          acc.push([item.k, item.v]);
+          acc[idx.value] = [item.k, item.v];
           idx.value = idx.value + 1;
         }
         break;
@@ -1095,7 +1095,13 @@ export function mapEqual<K, V>(xs: TernaryTreeMap<K, V>, ys: TernaryTreeMap<K, V
 
   let keys = mapKeys(xs);
   for (let key of keys) {
-    if (mapLoopGet(xs, key) != mapLoopGet(ys, key)) {
+    let vx = mapLoopGet(xs, key);
+    let vy = mapLoopGet(ys, key);
+    if (vx.existed !== vy.existed) {
+      return false;
+    }
+    // TODO compare deep structures
+    if (vx.value != vy.value) {
       return false;
     }
   }
