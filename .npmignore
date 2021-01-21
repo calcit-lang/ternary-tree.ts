@@ -9,3 +9,8 @@ template.ejs
 tsconfig.json
 webpack
 yarn.lock
+
+nim/
+.vscode/
+webpack.config.js
+.github/
