@@ -69,20 +69,40 @@ export function some<T>(v: T): Option<T> {
 
 export type Hash = number; // TODO
 
-export let valueHash = (x: any): number => {
-  let result: number = 0;
+export let valueHash = (x: any): Hash => {
   if (typeof x === "number") {
-    result = x;
+    // console.log("hash for x:", x, "\t", result);
+    return x;
   } else if (typeof x === "string") {
     let h = 0;
     // https://gist.github.com/hyamamoto/fd435505d29ebfa3d9716fd2be8d42f0#gistcomment-2775538
     for (var i = 0; i < x.length; i++) {
       h = Math.imul(31, h) + (x[i].charCodeAt(0) | 0);
     }
-    result = h;
-  } else {
-    throw new Error("Hash solution not provided for this type(other than number and string)");
+    // console.log("hash for x:", x, "\t", result);
+    return h;
   }
-  // console.log("hash for x:", x, "\t", result);
-  return result;
+  throw new Error("Hash solution not provided for this type(other than number and string)");
+};
+
+/** default hash function only handles number and string, need customization */
+export let hashGenerator: typeof valueHash = valueHash;
+
+/** allow customizing hash function from outside */
+export let overwriteHashGenerator = (f: typeof hashGenerator) => {
+  hashGenerator = f;
+};
+
+export let mergeValueHash = (base: Hash, x: number | string): Hash => {
+  if (typeof x === "number") {
+    return Math.imul(31, base) + x;
+  } else if (typeof x === "string") {
+    let h = base;
+    // https://gist.github.com/hyamamoto/fd435505d29ebfa3d9716fd2be8d42f0#gistcomment-2775538
+    for (var i = 0; i < x.length; i++) {
+      h = Math.imul(31, h) + (x[i].charCodeAt(0) | 0);
+    }
+    return h;
+  }
+  throw new Error("Hash solution not provided for this type(other than number and string)");
 };

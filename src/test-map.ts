@@ -1,4 +1,4 @@
-import { some, none, valueHash } from "./types";
+import { some, none, hashGenerator } from "./types";
 import { test, check, cmp, deepEqual, justDisplay } from "./utils";
 import {
   initTernaryTreeMap,
@@ -34,8 +34,8 @@ export let runMapTests = () => {
 
     // TODO
     inList.sort((x, y: [string, number]): number => {
-      let hx = valueHash(x[0]);
-      let hy = valueHash(y[0]);
+      let hx = hashGenerator(x[0]);
+      let hy = hashGenerator(y[0]);
       return cmp(hx, hy);
     });
 
