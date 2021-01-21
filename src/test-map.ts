@@ -1,5 +1,5 @@
 import { some, none } from "./types";
-import { test, check, cmp } from "./utils";
+import { test, check, cmp, deepEqual, justDisplay } from "./utils";
 import {
   initTernaryTreeMap,
   mapKeys,
@@ -20,6 +20,7 @@ import {
   mapLen,
   mapToString,
   mapEach,
+  mapEqual,
 } from "./map";
 import { valueHash } from "./hash";
 
@@ -41,18 +42,18 @@ test("init map", () => {
   let data10 = initTernaryTreeMap<string, number>(dict);
 
   // echo data10
-  check(formatMapInline(data10) == "((2:12 3:13 7:17) ((_ 9:19 _) (6:16 _ 5:15) (_ 1:11 _)) (8:18 0:10 4:14))");
+  justDisplay(formatMapInline(data10), "((2:12 3:13 7:17) ((_ 9:19 _) (6:16 _ 5:15) (_ 1:11 _)) (8:18 0:10 4:14))");
 
-  check(toHashSortedSeq(data10) === inList);
+  check(deepEqual(toHashSortedSeq(data10), inList));
 
   check(contains(data10, "1") == true);
   check(contains(data10, "11") == false);
 
-  check(mapLoopGet(data10, "1") == some(11));
-  check(mapLoopGet(data10, "11") == none());
+  check(deepEqual(mapLoopGet(data10, "1"), some(11)));
+  check(deepEqual(mapLoopGet(data10, "11"), none()));
 
   let emptyData: Map<string, number> = new Map();
-  check(initEmptyTernaryTreeMap<string, number>() == initTernaryTreeMap(emptyData));
+  check(mapEqual(initEmptyTernaryTreeMap<string, number>(), initTernaryTreeMap(emptyData)));
 });
 
 test("check(structure", () => {
@@ -63,7 +64,7 @@ test("check(structure", () => {
 
   let data = initTernaryTreeMap(dict);
 
-  check(checkMapStructure(data) == true);
+  check(checkMapStructure(data));
 });
 
 test("assoc map", () => {
@@ -79,8 +80,8 @@ test("assoc map", () => {
   check(contains(data, "1") == true);
   check(contains(data, "12") == false);
 
-  check(formatMapInline(assocMap(data, "1", 2222), false) == "((2:12 3:13 7:17) ((_ 9:19 _) (6:16 _ 5:15) (_ 1:2222 _)) (8:18 0:10 4:14))");
-  check(formatMapInline(assocMap(data, "23", 2222), false) == "((2:12 3:13 7:17) ((_ 9:19 _) (6:16 _ 5:15) (23:2222 1:11 _)) (8:18 0:10 4:14))");
+  justDisplay(formatMapInline(assocMap(data, "1", 2222), false), "((2:12 3:13 7:17) ((_ 9:19 _) (6:16 _ 5:15) (_ 1:2222 _)) (8:18 0:10 4:14))");
+  justDisplay(formatMapInline(assocMap(data, "23", 2222), false), "((2:12 3:13 7:17) ((_ 9:19 _) (6:16 _ 5:15) (23:2222 1:11 _)) (8:18 0:10 4:14))");
 });
 
 test("dissoc", () => {
@@ -116,8 +117,8 @@ test("to seq", () => {
   let data = initTernaryTreeMap(dict);
 
   // TODO
-  // check((mapToString(data.toPairs) == "@[2:12, 3:13, 7:17, 9:19, 6:16, 5:15, 1:11, 8:18, 0:10, 4:14]"))
-  check(mapKeys(data) == ["2", "3", "7", "9", "6", "5", "1", "8", "0", "4"]);
+  // justDisplay((mapToString(toPairs(data))) , "@[2:12, 3:13, 7:17, 9:19, 6:16, 5:15, 1:11, 8:18, 0:10, 4:14]")
+  justDisplay(mapKeys(data), ["2", "3", "7", "9", "6", "5", "1", "8", "0", "4"]);
 });
 
 test("Equality", () => {
@@ -129,8 +130,8 @@ test("Equality", () => {
   let data = initTernaryTreeMap(dict);
   let b = dissocMap(data, "3");
 
-  check(data == data);
-  check(data != b);
+  check(mapEqual(data, data));
+  check(!mapEqual(data, b));
 
   let c = assocMap(data, "3", 15);
   check(sameMapShape(data, data));
@@ -138,8 +139,8 @@ test("Equality", () => {
   check(sameMapShape(data, c) == false);
 
   let d = assocMap(c, "3", 13);
-  check(data == d);
-  check(data !== d);
+  check(mapEqual(data, d));
+  check(data !== d); // not identical
 });
 
 test("Merge", () => {
@@ -162,7 +163,7 @@ test("Merge", () => {
   let merged = merge(data, b);
   let both = initTernaryTreeMap(dictBoth);
 
-  check(merged == both);
+  check(mapEqual(merged, both));
 });
 
 test("Merge skip", () => {
@@ -179,10 +180,10 @@ test("Merge skip", () => {
   let b = initTernaryTreeMap(dict2);
 
   let c = mergeSkip(a, b, 11);
-  check(mapLoopGet(c, "0") == some(10));
-  check(mapLoopGet(c, "1") == some(12));
-  check(mapLoopGet(c, "2") == some(13));
-  check(mapLoopGet(c, "3") == some(14));
+  check(deepEqual(mapLoopGet(c, "0"), some(10)));
+  check(deepEqual(mapLoopGet(c, "1"), some(12)));
+  check(deepEqual(mapLoopGet(c, "2"), some(13)));
+  check(deepEqual(mapLoopGet(c, "3"), some(14)));
 });
 
 test("iterator", () => {
