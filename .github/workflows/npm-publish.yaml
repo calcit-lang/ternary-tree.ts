@@ -14,7 +14,7 @@ jobs:
           node-version: 12
           registry-url: https://registry.npmjs.org/
 
-      - run: yarn && yarn tsc
+      - run: yarn && yarn tsc -d
 
       - run: npm publish
         env:
