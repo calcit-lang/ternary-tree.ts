@@ -16,6 +16,9 @@ jobs:
 
       - run: yarn && yarn tsc -d
 
+      - run: target=node yarn webpack && node lib/bundle.js
+        name: run in Node tests
+
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
