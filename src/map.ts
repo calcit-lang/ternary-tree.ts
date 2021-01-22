@@ -460,12 +460,12 @@ function rangeContainsHash<K, T>(tree: TernaryTreeMap<K, T>, thisHash: Hash): bo
   }
 }
 
-export function assocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T): TernaryTreeMap<K, T> {
+export function assocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: Hash = null as any): TernaryTreeMap<K, T> {
   if (tree == null || isMapEmpty(tree)) {
     throw new Error("Cannot call assoc on nil");
   }
 
-  let thisHash = hashGenerator(key);
+  thisHash = thisHash ?? hashGenerator(key);
 
   if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
     if (tree.hash !== thisHash) {
@@ -499,7 +499,7 @@ export function assocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T):
         kind: TernaryTreeKind.ternaryTreeBranch,
         maxHash: tree.maxHash,
         minHash: tree.minHash,
-        left: assocExisted(tree.left, key, item),
+        left: assocExisted(tree.left, key, item, thisHash),
         middle: tree.middle,
         right: tree.right,
         depth: 0, // TODO
@@ -514,7 +514,7 @@ export function assocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T):
         maxHash: tree.maxHash,
         minHash: tree.minHash,
         left: tree.left,
-        middle: assocExisted(tree.middle, key, item),
+        middle: assocExisted(tree.middle, key, item, thisHash),
         right: tree.right,
         depth: 0, // TODO
       };
@@ -529,7 +529,7 @@ export function assocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T):
         minHash: tree.minHash,
         left: tree.left,
         middle: tree.middle,
-        right: assocExisted(tree.right, key, item),
+        right: assocExisted(tree.right, key, item, thisHash),
         depth: 0, // TODO
       };
       return result;
@@ -540,13 +540,13 @@ export function assocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T):
   return emptyBranch;
 }
 
-function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T): TernaryTreeMap<K, T> {
+function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: Hash = null as any): TernaryTreeMap<K, T> {
   // echo fmt"assoc new: {key} to {tree.formatInline}"
   if (tree == null || isMapEmpty(tree)) {
     return createLeaf(key, item);
   }
 
-  let thisHash = hashGenerator(key);
+  thisHash = thisHash ?? hashGenerator(key);
 
   if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
     if (thisHash === tree.hash) {
@@ -744,7 +744,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T): TernaryTre
         kind: TernaryTreeKind.ternaryTreeBranch,
         maxHash: tree.maxHash,
         minHash: tree.minHash,
-        left: assocNew(tree.left, key, item),
+        left: assocNew(tree.left, key, item, thisHash),
         middle: tree.middle,
         right: tree.right,
         depth: 0, // TODO
@@ -757,7 +757,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T): TernaryTre
         maxHash: tree.maxHash,
         minHash: tree.minHash,
         left: tree.left,
-        middle: assocNew(tree.middle, key, item),
+        middle: assocNew(tree.middle, key, item, thisHash),
         right: tree.right,
         depth: 0, // TODO
       };
@@ -770,7 +770,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T): TernaryTre
         minHash: tree.minHash,
         left: tree.left,
         middle: tree.middle,
-        right: assocNew(tree.right, key, item),
+        right: assocNew(tree.right, key, item, thisHash),
         depth: 0, // TODO
       };
       return result;
@@ -782,7 +782,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T): TernaryTre
           kind: TernaryTreeKind.ternaryTreeBranch,
           maxHash: tree.maxHash,
           minHash: tree.minHash,
-          left: assocNew(tree.left, key, item),
+          left: assocNew(tree.left, key, item, thisHash),
           middle: tree.middle,
           right: tree.right,
           depth: 0, // TODO
@@ -795,7 +795,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T): TernaryTre
           minHash: tree.minHash,
           left: tree.left,
           middle: tree.middle,
-          right: assocNew(tree.right, key, item),
+          right: assocNew(tree.right, key, item, thisHash),
           depth: 0, // TODO
         };
         return result;
@@ -808,7 +808,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T): TernaryTre
       maxHash: tree.maxHash,
       minHash: tree.minHash,
       left: tree.left,
-      middle: assocNew(tree.middle, key, item),
+      middle: assocNew(tree.middle, key, item, thisHash),
       right: tree.right,
       depth: 0, // TODO
     };
