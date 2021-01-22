@@ -16,7 +16,7 @@ export function getDepth<T>(tree: TernaryTreeList<T>): number {
 let emptyBranch: TernaryTreeList<any> = null as any;
 
 export function decideParentDepth<T>(...xs: Array<TernaryTreeList<T>>): number {
-  var depth = 0;
+  let depth = 0;
   for (let x of xs) {
     let y = getDepth(x);
     if (y > depth) {
@@ -26,7 +26,7 @@ export function decideParentDepth<T>(...xs: Array<TernaryTreeList<T>>): number {
   return depth + 1;
 }
 
-export function initTernaryTreeListIter<T>(size: number, offset: number, xs: /* var */ Array<TernaryTreeList<T>>): TernaryTreeList<T> {
+export function makeTernaryTreeList<T>(size: number, offset: number, xs: /* var */ Array<TernaryTreeList<T>>): TernaryTreeList<T> {
   switch (size) {
     case 0: {
       return { kind: TernaryTreeKind.ternaryTreeBranch, size: 0, depth: 1, left: emptyBranch, middle: emptyBranch, right: emptyBranch } as TernaryTreeList<T>;
@@ -63,9 +63,9 @@ export function initTernaryTreeListIter<T>(size: number, offset: number, xs: /* 
     default: {
       let divided = divideTernarySizes(size);
 
-      let left = initTernaryTreeListIter(divided.left, offset, xs);
-      let middle = initTernaryTreeListIter(divided.middle, offset + divided.left, xs);
-      let right = initTernaryTreeListIter(divided.right, offset + divided.left + divided.middle, xs);
+      let left = makeTernaryTreeList(divided.left, offset, xs);
+      let middle = makeTernaryTreeList(divided.middle, offset + divided.left, xs);
+      let right = makeTernaryTreeList(divided.right, offset + divided.left + divided.middle, xs);
       let result: TernaryTreeList<T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
         size: size,
@@ -80,12 +80,12 @@ export function initTernaryTreeListIter<T>(size: number, offset: number, xs: /* 
 }
 
 export function initTernaryTreeList<T>(xs: Array<T>): TernaryTreeList<T> {
-  var ys = new Array<TernaryTreeList<T>>(xs.length);
+  let ys = new Array<TernaryTreeList<T>>(xs.length);
   for (let idx in xs) {
     let x = xs[idx];
     ys[idx] = { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: x };
   }
-  return initTernaryTreeListIter(xs.length, 0, ys);
+  return makeTernaryTreeList(xs.length, 0, ys);
 }
 
 export function initEmptyTernaryTreeList<T>(): TernaryTreeList<T> {
@@ -152,8 +152,8 @@ export function writeSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<T>, i
 }
 
 export function listToSeq<T>(tree: TernaryTreeList<T>): Array<T> {
-  var acc = new Array<T>(listLen(tree));
-  var counter: RefInt = { value: 0 };
+  let acc = new Array<T>(listLen(tree));
+  let counter: RefInt = { value: 0 };
   counter.value = 0;
   writeSeq(tree, acc, counter);
   return acc;
@@ -274,8 +274,8 @@ function writeLeavesSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<Ternar
 }
 
 export function toLeavesSeq<T>(tree: TernaryTreeList<T>): Array<TernaryTreeList<T>> {
-  var acc = new Array<TernaryTreeList<T>>(listLen(tree));
-  var counter: RefInt = { value: 0 };
+  let acc = new Array<TernaryTreeList<T>>(listLen(tree));
+  let counter: RefInt = { value: 0 };
   writeLeavesSeq(tree, acc, counter);
   return acc;
 }
@@ -288,7 +288,7 @@ export function* listItems<T>(tree: TernaryTreeList<T>): Generator<T> {
   //   yield x
 
   for (let idx = 0; idx < listLen(tree); idx++) {
-    yield loopGetList(tree, idx);
+    yield listGet(tree, idx);
   }
 }
 
@@ -301,9 +301,9 @@ export function* listPairs<T>(tree: TernaryTreeList<T>): Generator<[number, T]> 
   }
 }
 
-export function loopGetList<T>(originalTree: TernaryTreeList<T>, originalIdx: number): T {
-  var tree = originalTree;
-  var idx = originalIdx;
+export function listGet<T>(originalTree: TernaryTreeList<T>, originalIdx: number): T {
+  let tree = originalTree;
+  let idx = originalIdx;
   while (tree != null) {
     if (idx < 0) {
       throw new Error("Cannot index negative number");
@@ -313,7 +313,7 @@ export function loopGetList<T>(originalTree: TernaryTreeList<T>, originalIdx: nu
       if (idx === 0) {
         return tree.value;
       } else {
-        throw new Error("Cannot get from leaf with index {idx}");
+        throw new Error(`Cannot get from leaf with index ${idx}`);
       }
     }
 
@@ -340,12 +340,12 @@ export function loopGetList<T>(originalTree: TernaryTreeList<T>, originalIdx: nu
     }
   }
 
-  throw new Error("Failed to get {idx}");
+  throw new Error(`Failed to get ${idx}`);
 }
 
 export function first<T>(tree: TernaryTreeList<T>): T {
   if (listLen(tree) > 0) {
-    return loopGetList(tree, 0);
+    return listGet(tree, 0);
   } else {
     throw new Error("Cannot get from empty list");
   }
@@ -353,7 +353,7 @@ export function first<T>(tree: TernaryTreeList<T>): T {
 
 export function last<T>(tree: TernaryTreeList<T>): T {
   if (listLen(tree) > 0) {
-    return loopGetList(tree, listLen(tree) - 1);
+    return listGet(tree, listLen(tree) - 1);
   } else {
     throw new Error("Cannot get from empty list");
   }
@@ -371,7 +371,7 @@ export function assocList<T>(tree: TernaryTreeList<T>, idx: number, item: T): Te
     if (idx === 0) {
       return { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>;
     } else {
-      throw new Error("Cannot get from leaf with index {idx}");
+      throw new Error(`Cannot get from leaf with index ${idx}`);
     }
   }
 
@@ -423,7 +423,7 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
   }
 
   if (idx < 0) {
-    throw new Error("Index is negative {idx}");
+    throw new Error(`Index is negative ${idx}`);
   }
 
   if (listLen(tree) === 0) {
@@ -431,7 +431,7 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
   }
 
   if (idx > listLen(tree) - 1) {
-    throw new Error("Index too large {idx}");
+    throw new Error(`Index too large ${idx}`);
   }
 
   if (listLen(tree) === 1) {
@@ -505,7 +505,7 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
     result = {
       kind: TernaryTreeKind.ternaryTreeLeaf,
       size: 1,
-      value: loopGetList(result, 0),
+      value: listGet(result, 0),
     };
   }
   return result;
@@ -727,7 +727,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
           };
           return result;
         } else {
-          throw new Error("Unexpected idx: {idx}");
+          throw new Error(`Unexpected idx: ${idx}`);
         }
       } else {
         if (idx === 0) {
@@ -751,7 +751,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
           };
           return result;
         } else {
-          throw new Error("Unexpected idx: {idx}");
+          throw new Error(`Unexpected idx: ${idx}`);
         }
       }
     }
@@ -871,8 +871,8 @@ export function assocAfter<T>(tree: TernaryTreeList<T>, idx: number, item: T, af
 export function forceListInplaceBalancing<T>(tree: TernaryTreeList<T>): void {
   if (tree.kind === TernaryTreeKind.ternaryTreeBranch) {
     // echo "Force inplace balancing case list: ", tree.size
-    var ys = toLeavesSeq(tree);
-    let newTree = initTernaryTreeListIter(ys.length, 0, ys) as TernaryTreeListTheBranch<T>;
+    let ys = toLeavesSeq(tree);
+    let newTree = makeTernaryTreeList(ys.length, 0, ys) as TernaryTreeListTheBranch<T>;
     // let newTree = initTernaryTreeList(ys)
     tree.left = newTree.left;
     tree.middle = newTree.middle;
@@ -981,7 +981,7 @@ export function listEqual<T>(xs: TernaryTreeList<T>, ys: TernaryTreeList<T>): bo
   }
 
   for (let idx = 0; idx < listLen(xs); idx++) {
-    if (!dataEqual(loopGetList(xs, idx), loopGetList(ys, idx))) {
+    if (!dataEqual(listGet(xs, idx), listGet(ys, idx))) {
       return false;
     }
   }
@@ -1053,16 +1053,21 @@ export function slice<T>(tree: TernaryTreeList<T>, startIdx: number, endIdx: num
 
   // echo "sizes: {leftSize} {middleSize} {rightSize}"
 
-  if (startIdx >= leftSize + middleSize) return slice(tree.right, startIdx - leftSize - middleSize, endIdx - leftSize - middleSize);
+  if (startIdx >= leftSize + middleSize) {
+    return slice(tree.right, startIdx - leftSize - middleSize, endIdx - leftSize - middleSize);
+  }
   if (startIdx >= leftSize)
-    if (endIdx <= leftSize + middleSize) return slice(tree.middle, startIdx - leftSize, endIdx - leftSize);
-    else {
+    if (endIdx <= leftSize + middleSize) {
+      return slice(tree.middle, startIdx - leftSize, endIdx - leftSize);
+    } else {
       let middleCut = slice(tree.middle, startIdx - leftSize, middleSize);
       let rightCut = slice(tree.right, 0, endIdx - leftSize - middleSize);
       return concat(middleCut, rightCut);
     }
 
-  if (endIdx <= leftSize) return slice(tree.left, startIdx, endIdx);
+  if (endIdx <= leftSize) {
+    return slice(tree.left, startIdx, endIdx);
+  }
 
   if (endIdx <= leftSize + middleSize) {
     let leftCut = slice(tree.left, startIdx, leftSize);

@@ -22,7 +22,7 @@ import {
   first,
   assocList,
   dissocList,
-  loopGetList,
+  listGet,
   insert,
   initEmptyTernaryTreeList,
   last,
@@ -59,7 +59,7 @@ export let runListTests = () => {
 
     // get
     for (let idx = 0; idx < origin11.length; idx++) {
-      check(origin11[idx] == loopGetList(data11, idx));
+      check(origin11[idx] == listGet(data11, idx));
     }
 
     check(first(data11) == 1);
@@ -69,8 +69,8 @@ export let runListTests = () => {
     let origin5 = [1, 2, 3, 4, 5];
     let data5 = initTernaryTreeList(origin5);
     let updated = assocList(data5, 3, 10);
-    check(loopGetList(updated, 3) == 10);
-    check(loopGetList(data5, 3) == 4);
+    check(listGet(updated, 3) == 10);
+    check(listGet(data5, 3) == 4);
     check(listLen(updated) == listLen(data5));
 
     for (let idx = 0; idx < listLen(data5); idx++) {

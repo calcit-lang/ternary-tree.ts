@@ -3,7 +3,7 @@ import { test, check, cmp, deepEqual, justDisplay } from "./utils";
 import {
   initTernaryTreeMap,
   mapKeys,
-  toHashSortedSeq,
+  toHashSortedPairs,
   merge,
   mergeSkip,
   forceMapInplaceBalancing,
@@ -11,7 +11,7 @@ import {
   assocMap,
   dissocMap,
   contains,
-  mapLoopGet,
+  mapGet,
   toPairs,
   toPairsIterator,
   initEmptyTernaryTreeMap,
@@ -44,13 +44,13 @@ export let runMapTests = () => {
     // echo data10
     justDisplay(formatMapInline(data10), "((2:12 3:13 7:17) ((_ 9:19 _) (6:16 _ 5:15) (_ 1:11 _)) (8:18 0:10 4:14))");
 
-    check(deepEqual(toHashSortedSeq(data10), inList));
+    check(deepEqual(toHashSortedPairs(data10), inList));
 
     check(contains(data10, "1") == true);
     check(contains(data10, "11") == false);
 
-    check(deepEqual(mapLoopGet(data10, "1"), some(11)));
-    check(deepEqual(mapLoopGet(data10, "11"), none()));
+    check(deepEqual(mapGet(data10, "1"), some(11)));
+    check(deepEqual(mapGet(data10, "11"), none()));
 
     let emptyData: Map<string, number> = new Map();
     check(mapEqual(initEmptyTernaryTreeMap<string, number>(), initTernaryTreeMap(emptyData)));
@@ -180,10 +180,10 @@ export let runMapTests = () => {
     let b = initTernaryTreeMap(dict2);
 
     let c = mergeSkip(a, b, 11);
-    check(deepEqual(mapLoopGet(c, "0"), some(10)));
-    check(deepEqual(mapLoopGet(c, "1"), some(12)));
-    check(deepEqual(mapLoopGet(c, "2"), some(13)));
-    check(deepEqual(mapLoopGet(c, "3"), some(14)));
+    check(deepEqual(mapGet(c, "0"), some(10)));
+    check(deepEqual(mapGet(c, "1"), some(12)));
+    check(deepEqual(mapGet(c, "2"), some(13)));
+    check(deepEqual(mapGet(c, "3"), some(14)));
   });
 
   test("iterator", () => {
