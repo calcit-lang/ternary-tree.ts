@@ -1,3 +1,15 @@
+/** by default, it compares by reference
+ * supposed to be overwritten by user
+ */
+
+export let dataEqual = (x: any, y: any): boolean => {
+  return x === y;
+};
+
+export let overwriteComparator = (f: (x: any, y: any) => boolean) => {
+  dataEqual = f;
+};
+
 export let roughIntPow = (x: number, times: number): number => {
   if (times < 1) {
     return x;
