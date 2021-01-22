@@ -327,12 +327,13 @@ function toHashSortedSeqOfLeaves<K, T>(tree: TernaryTreeMap<K, T>): Array<Ternar
   return acc;
 }
 
-export function contains<K, T>(tree: TernaryTreeMap<K, T>, item: K): boolean {
+export function contains<K, T>(tree: TernaryTreeMap<K, T>, item: K, hx: Hash = null as any): boolean {
   if (tree == null) {
     return false;
   }
 
-  let hx = hashGenerator(item);
+  // reduce redundant computation by reusing hash result
+  hx = hx ?? hashGenerator(item);
 
   if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
     if (hx === tree.hash) {
@@ -354,7 +355,7 @@ export function contains<K, T>(tree: TernaryTreeMap<K, T>, item: K): boolean {
           return true;
         }
       } else if (hx >= branch.minHash && hx <= branch.maxHash) {
-        return contains(branch, item); // TODO
+        return contains(branch, item, hx); // TODO
       }
     }
   }
@@ -539,7 +540,7 @@ export function assocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T):
   return emptyBranch;
 }
 
-export function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T): TernaryTreeMap<K, T> {
+function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T): TernaryTreeMap<K, T> {
   // echo fmt"assoc new: {key} to {tree.formatInline}"
   if (tree == null || isMapEmpty(tree)) {
     return createLeaf(key, item);
@@ -829,7 +830,7 @@ export function assocMap<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, disa
   }
 }
 
-export function dissocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K): TernaryTreeMap<K, T> {
+function dissocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K): TernaryTreeMap<K, T> {
   if (tree == null) {
     throw new Error("Unexpected missing key in dissoc");
   }

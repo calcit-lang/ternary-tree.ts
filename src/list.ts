@@ -15,7 +15,7 @@ export function getDepth<T>(tree: TernaryTreeList<T>): number {
 
 let emptyBranch: TernaryTreeList<any> = null as any;
 
-export function decideParentDepth<T>(...xs: Array<TernaryTreeList<T>>): number {
+function decideParentDepth<T>(...xs: Array<TernaryTreeList<T>>): number {
   let depth = 0;
   for (let x of xs) {
     let y = getDepth(x);
@@ -104,11 +104,11 @@ export function listLen<T>(tree: TernaryTreeList<T>): number {
   }
 }
 
-export function isLeaf<T>(tree: TernaryTreeList<T>): boolean {
+function isLeaf<T>(tree: TernaryTreeList<T>): boolean {
   return tree.kind === TernaryTreeKind.ternaryTreeLeaf;
 }
 
-export function isBranch<T>(tree: TernaryTreeList<T>): boolean {
+function isBranch<T>(tree: TernaryTreeList<T>): boolean {
   return tree.kind === TernaryTreeKind.ternaryTreeBranch;
 }
 
@@ -125,7 +125,7 @@ export function formatListInline<T>(tree: TernaryTreeList<T>): string {
   }
 }
 
-export function writeSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<T>, idx: RefInt): void {
+function writeSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<T>, idx: RefInt): void {
   if (tree == null) {
     // discard
   } else {
