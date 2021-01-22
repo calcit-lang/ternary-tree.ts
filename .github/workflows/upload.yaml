@@ -26,7 +26,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
 
-      - run: yarn && yarn tsc && yarn webpack && cp assets/index.html lib/
+      - run: yarn && yarn tsc
+
+      - run: target=node yarn webpack && node lib/bundle.js
+        name: run in Node tests
+
+      - run: yarn webpack && cp assets/index.html lib/
         name: Build web assets
 
       - run: node lib/bundle.js

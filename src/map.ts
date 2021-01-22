@@ -335,13 +335,12 @@ export function contains<K, T>(tree: TernaryTreeMap<K, T>, item: K): boolean {
   let hx = hashGenerator(item);
 
   if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
-    if (hx !== tree.hash) {
-      throw new Error("Expected hashes to be identical");
-    }
-    for (let idx in tree.elements) {
-      let pair = tree.elements[idx];
-      if (dataEqual(pair.k, item)) {
-        return true;
+    if (hx === tree.hash) {
+      for (let idx in tree.elements) {
+        let pair = tree.elements[idx];
+        if (dataEqual(pair.k, item)) {
+          return true;
+        }
       }
     }
     return false;
@@ -469,7 +468,7 @@ export function assocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T):
 
   if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
     if (tree.hash !== thisHash) {
-      throw new Error("Expected hashes to be identical");
+      throw new Error("Expected hashes to be identical, otherwise element is missing");
     }
     let newPairs = new Array<TernaryTreeMapKeyValuePair<K, T>>(tree.elements.length);
     let replaced = false;
