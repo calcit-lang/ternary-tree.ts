@@ -25,6 +25,11 @@ export type TernaryTreeMapKeyValuePair<K, V> = {
   v: V;
 };
 
+export type TernaryTreeMapHashEntry<K, V> = {
+  hash: Hash;
+  pairs: Array<[K, V]>;
+};
+
 export type TernaryTreeMapTheBranch<K, T> = {
   kind: TernaryTreeKind.ternaryTreeBranch;
   depth: number;
@@ -37,7 +42,7 @@ export type TernaryTreeMapTheBranch<K, T> = {
 export type TernaryTreeMapTheLeaf<K, T> = {
   kind: TernaryTreeKind.ternaryTreeLeaf;
   hash: number;
-  elements: Array<TernaryTreeMapKeyValuePair<K, T>>; // handle hash collapsing
+  elements: Array<[K, T]>; // handle hash collapsing
 };
 
 export type TernaryTreeMap<K, T> = TernaryTreeMapTheBranch<K, T> | TernaryTreeMapTheLeaf<K, T>;

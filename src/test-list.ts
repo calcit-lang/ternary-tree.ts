@@ -6,7 +6,7 @@ import {
   findIndex,
   reverse,
   checkListStructure,
-  listToSeq,
+  listToArray,
   slice,
   listPairs,
   listItems,
@@ -47,7 +47,7 @@ export let runListTests = () => {
     check(checkListStructure(data11));
 
     check(formatListInline(data11) == "((1 (2 _ 3) 4) (5 6 7) (8 (9 _ 10) 11))");
-    check(arrayEqual<number>(origin11, listToSeq(data11)));
+    check(arrayEqual<number>(origin11, listToArray(data11)));
 
     let emptyXs = new Array<number>(0);
     check(listEqual(initEmptyTernaryTreeList<number>(), initTernaryTreeList(emptyXs)));
@@ -205,7 +205,7 @@ export let runListTests = () => {
 
     for (let i = 0; i < 40; i++) {
       for (let j = i; j < 40; j++) {
-        check(arrayEqual<number>(listToSeq(slice(data, i, j)), list40.slice(i, j)));
+        check(arrayEqual<number>(listToArray(slice(data, i, j)), list40.slice(i, j)));
       }
     }
   });
@@ -213,7 +213,7 @@ export let runListTests = () => {
   test("reverse", () => {
     let data = initTernaryTreeList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     let reversedData = reverse(data);
-    check(arrayEqual(listToSeq(data).reverse(), listToSeq(reversedData)));
+    check(arrayEqual(listToArray(data).reverse(), listToArray(reversedData)));
     check(checkListStructure(reversedData));
   });
 

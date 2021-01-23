@@ -125,7 +125,7 @@ export function formatListInline<T>(tree: TernaryTreeList<T>): string {
   }
 }
 
-function writeSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<T>, idx: RefInt): void {
+function writeArray<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<T>, idx: RefInt): void {
   if (tree == null) {
     // discard
   } else {
@@ -137,13 +137,13 @@ function writeSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<T>, idx: Ref
       }
       case TernaryTreeKind.ternaryTreeBranch: {
         if (tree.left != null) {
-          writeSeq(tree.left, acc, idx);
+          writeArray(tree.left, acc, idx);
         }
         if (tree.middle != null) {
-          writeSeq(tree.middle, acc, idx);
+          writeArray(tree.middle, acc, idx);
         }
         if (tree.right != null) {
-          writeSeq(tree.right, acc, idx);
+          writeArray(tree.right, acc, idx);
         }
         break;
       }
@@ -151,11 +151,11 @@ function writeSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<T>, idx: Ref
   }
 }
 
-export function listToSeq<T>(tree: TernaryTreeList<T>): Array<T> {
+export function listToArray<T>(tree: TernaryTreeList<T>): Array<T> {
   let acc = new Array<T>(listLen(tree));
   let counter: RefInt = { value: 0 };
   counter.value = 0;
-  writeSeq(tree, acc, counter);
+  writeArray(tree, acc, counter);
   return acc;
 }
 
@@ -244,7 +244,7 @@ export function indexOf<T>(tree: TernaryTreeList<T>, item: T): number {
   }
 }
 
-function writeLeavesSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<TernaryTreeList<T>>, idx: RefInt): void {
+function writeLeavesArray<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<TernaryTreeList<T>>, idx: RefInt): void {
   if (tree == null) {
     //
   } else {
@@ -256,13 +256,13 @@ function writeLeavesSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<Ternar
       }
       case TernaryTreeKind.ternaryTreeBranch: {
         if (tree.left != null) {
-          writeLeavesSeq(tree.left, acc, idx);
+          writeLeavesArray(tree.left, acc, idx);
         }
         if (tree.middle != null) {
-          writeLeavesSeq(tree.middle, acc, idx);
+          writeLeavesArray(tree.middle, acc, idx);
         }
         if (tree.right != null) {
-          writeLeavesSeq(tree.right, acc, idx);
+          writeLeavesArray(tree.right, acc, idx);
         }
         break;
       }
@@ -273,30 +273,25 @@ function writeLeavesSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<Ternar
   }
 }
 
-export function toLeavesSeq<T>(tree: TernaryTreeList<T>): Array<TernaryTreeList<T>> {
+function toLeavesArray<T>(tree: TernaryTreeList<T>): Array<TernaryTreeList<T>> {
   let acc = new Array<TernaryTreeList<T>>(listLen(tree));
   let counter: RefInt = { value: 0 };
-  writeLeavesSeq(tree, acc, counter);
+  writeLeavesArray(tree, acc, counter);
   return acc;
 }
 
 // https://forum.nim-lang.org/t/5697
 export function* listItems<T>(tree: TernaryTreeList<T>): Generator<T> {
-  // let seqItems = tree.toSeq()
-
-  // for x in seqItems:
-  //   yield x
-
   for (let idx = 0; idx < listLen(tree); idx++) {
     yield listGet(tree, idx);
   }
 }
 
 export function* listPairs<T>(tree: TernaryTreeList<T>): Generator<[number, T]> {
-  let seqItems = listToSeq(tree);
+  let items = listToArray(tree);
 
-  for (let idx in seqItems) {
-    let x = seqItems[idx];
+  for (let idx in items) {
+    let x = items[idx];
     yield [parseInt(idx), x];
   }
 }
@@ -871,7 +866,7 @@ export function assocAfter<T>(tree: TernaryTreeList<T>, idx: number, item: T, af
 export function forceListInplaceBalancing<T>(tree: TernaryTreeList<T>): void {
   if (tree.kind === TernaryTreeKind.ternaryTreeBranch) {
     // echo "Force inplace balancing case list: ", tree.size
-    let ys = toLeavesSeq(tree);
+    let ys = toLeavesArray(tree);
     let newTree = makeTernaryTreeList(ys.length, 0, ys) as TernaryTreeListTheBranch<T>;
     // let newTree = initTernaryTreeList(ys)
     tree.left = newTree.left;
