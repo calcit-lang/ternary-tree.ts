@@ -1,4 +1,4 @@
-import { some, none, hashGenerator } from "./types";
+import { hashGenerator } from "./types";
 import { test, check, cmp, deepEqual, justDisplay } from "./utils";
 import {
   initTernaryTreeMap,
@@ -49,8 +49,8 @@ export let runMapTests = () => {
     check(contains(data10, "1") == true);
     check(contains(data10, "11") == false);
 
-    check(deepEqual(mapGet(data10, "1"), some(11)));
-    check(deepEqual(mapGet(data10, "11"), none()));
+    check(deepEqual(mapGet(data10, "1"), 11));
+    check(deepEqual(mapGet(data10, "11"), null));
 
     let emptyData: Map<string, number> = new Map();
     check(mapEqual(initEmptyTernaryTreeMap<string, number>(), initTernaryTreeMap(emptyData)));
@@ -180,10 +180,10 @@ export let runMapTests = () => {
     let b = initTernaryTreeMap(dict2);
 
     let c = mergeSkip(a, b, 11);
-    check(deepEqual(mapGet(c, "0"), some(10)));
-    check(deepEqual(mapGet(c, "1"), some(12)));
-    check(deepEqual(mapGet(c, "2"), some(13)));
-    check(deepEqual(mapGet(c, "3"), some(14)));
+    check(deepEqual(mapGet(c, "0"), 10));
+    check(deepEqual(mapGet(c, "1"), 12));
+    check(deepEqual(mapGet(c, "2"), 13));
+    check(deepEqual(mapGet(c, "3"), 14));
   });
 
   test("iterator", () => {

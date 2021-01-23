@@ -5,9 +5,6 @@ import {
   TernaryTreeMapTheBranch,
   TernaryTreeMapKeyValuePair,
   RefInt,
-  Option,
-  some,
-  none,
   Hash,
   hashGenerator,
 } from "./types";
@@ -19,6 +16,7 @@ export type TernaryTreeMapKeyValuePairOfLeaf<K, V> = {
 };
 
 let emptyBranch: TernaryTreeMap<any, any> = null as any;
+let nilResult = null as any;
 
 function getMax<K, V>(tree: TernaryTreeMap<K, V>): Hash {
   if (tree == null) {
@@ -363,7 +361,7 @@ export function contains<K, T>(tree: TernaryTreeMap<K, T>, item: K, hx: Hash = n
   return false;
 }
 
-export function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): Option<T> {
+export function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): T {
   let hx = hashGenerator(item);
 
   let tree = originalTree;
@@ -372,10 +370,10 @@ export function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): Optio
     if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
       for (let pair of tree.elements) {
         if (dataEqual(pair.k, item)) {
-          return some(pair.v);
+          return pair.v;
         }
       }
-      return none();
+      return nilResult;
     }
 
     // echo "looking for: ", hx, " ", item, " in ", tree.formatInline
@@ -386,10 +384,10 @@ export function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): Optio
           if (branch.hash === hx) {
             for (let pair of branch.elements) {
               if (dataEqual(pair.k, item)) {
-                return some(pair.v);
+                return pair.v;
               }
             }
-            return none();
+            return nilResult;
           }
         } else if (hx >= branch.minHash && hx <= branch.maxHash) {
           tree = branch;
@@ -398,10 +396,10 @@ export function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): Optio
       }
     }
 
-    return none();
+    return nilResult;
   }
 
-  return none();
+  return nilResult;
 }
 
 // leaves on the left has smaller hashes
@@ -1027,11 +1025,9 @@ export function mapEqual<K, V>(xs: TernaryTreeMap<K, V>, ys: TernaryTreeMap<K, V
   for (let key of keys) {
     let vx = mapGet(xs, key);
     let vy = mapGet(ys, key);
-    if (vx.existed !== vy.existed) {
-      return false;
-    }
+
     // TODO compare deep structures
-    if (!dataEqual(vx.value, vy.value)) {
+    if (!dataEqual(vx, vy)) {
       return false;
     }
   }

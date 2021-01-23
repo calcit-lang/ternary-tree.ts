@@ -46,27 +46,6 @@ export type RefInt = {
   value: number;
 };
 
-export type Option<T> = {
-  existed: boolean;
-  value: T;
-};
-
-export function none<T>(): Option<T> {
-  let result: Option<T> = {
-    existed: false,
-    value: null as any,
-  };
-  return result;
-}
-
-export function some<T>(v: T): Option<T> {
-  let result: Option<T> = {
-    existed: true,
-    value: v,
-  };
-  return result;
-}
-
 export type Hash = number; // TODO
 
 export let valueHash = (x: any): Hash => {
