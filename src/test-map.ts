@@ -19,6 +19,7 @@ import {
   mapToString,
   mapEqual,
   toKeys,
+  toPairsArray,
 } from "./map";
 
 export let runMapTests = () => {
@@ -106,7 +107,7 @@ export let runMapTests = () => {
     }
   });
 
-  test("to seq", () => {
+  test("to array", () => {
     var dict: Map<string, number> = new Map();
     for (let idx = 0; idx < 10; idx++) {
       dict.set(`${idx}`, idx + 10);
@@ -117,6 +118,8 @@ export let runMapTests = () => {
     // TODO
     // justDisplay((mapToString(toPairs(data))) , "@[2:12, 3:13, 7:17, 9:19, 6:16, 5:15, 1:11, 8:18, 0:10, 4:14]")
     justDisplay([...toKeys(data)], ["2", "3", "7", "9", "6", "5", "1", "8", "0", "4"]);
+
+    check(deepEqual(toPairsArray(data), [...toPairs(data)]));
   });
 
   test("Equality", () => {

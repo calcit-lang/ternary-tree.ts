@@ -919,6 +919,27 @@ export function dissocMap<K, T>(tree: TernaryTreeMap<K, T>, key: K): TernaryTree
   }
 }
 
+function collectToPairsArray<K, T>(acc: Array<[K, T]>, tree: TernaryTreeMap<K, T>): void {
+  if (tree != null) {
+    if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
+      for (let pair of tree.elements) {
+        acc.push(pair);
+      }
+    } else {
+      for (let branch of [tree.left, tree.middle, tree.right]) {
+        collectToPairsArray(acc, branch);
+      }
+    }
+  }
+}
+
+/** similar to `toPairs`, but using Array.push directly */
+export function toPairsArray<K, T>(tree: TernaryTreeMap<K, T>): Array<[K, T]> {
+  let result: Array<[K, T]> = [];
+  collectToPairsArray(result, tree);
+  return result;
+}
+
 export function* toPairs<K, T>(tree: TernaryTreeMap<K, T>): Generator<[K, T]> {
   if (tree != null) {
     if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
@@ -936,13 +957,34 @@ export function* toPairs<K, T>(tree: TernaryTreeMap<K, T>): Generator<[K, T]> {
 }
 
 export function* toKeys<K, V>(tree: TernaryTreeMap<K, V>): Generator<K> {
-  for (let item of toPairs(tree)) {
-    yield item[0];
+  if (tree != null) {
+    if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
+      for (let pair of tree.elements) {
+        yield pair[0];
+      }
+    } else {
+      for (let branch of [tree.left, tree.middle, tree.right]) {
+        for (let item of toKeys(branch)) {
+          yield item;
+        }
+      }
+    }
   }
 }
+
 export function* toValues<K, V>(tree: TernaryTreeMap<K, V>): Generator<V> {
-  for (let item of toPairs(tree)) {
-    yield item[1];
+  if (tree != null) {
+    if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
+      for (let pair of tree.elements) {
+        yield pair[1];
+      }
+    } else {
+      for (let branch of [tree.left, tree.middle, tree.right]) {
+        for (let item of toValues(branch)) {
+          yield item;
+        }
+      }
+    }
   }
 }
 
