@@ -2,7 +2,6 @@ import { hashGenerator } from "./types";
 import { test, check, cmp, deepEqual, justDisplay } from "./utils";
 import {
   initTernaryTreeMap,
-  mapKeys,
   toHashSortedPairs,
   merge,
   mergeSkip,
@@ -13,14 +12,13 @@ import {
   contains,
   mapGet,
   toPairs,
-  toPairsIterator,
   initEmptyTernaryTreeMap,
   sameMapShape,
   checkMapStructure,
   mapLen,
   mapToString,
-  mapEach,
   mapEqual,
+  toKeys,
 } from "./map";
 
 export let runMapTests = () => {
@@ -118,7 +116,7 @@ export let runMapTests = () => {
 
     // TODO
     // justDisplay((mapToString(toPairs(data))) , "@[2:12, 3:13, 7:17, 9:19, 6:16, 5:15, 1:11, 8:18, 0:10, 4:14]")
-    justDisplay(mapKeys(data), ["2", "3", "7", "9", "6", "5", "1", "8", "0", "4"]);
+    justDisplay([...toKeys(data)], ["2", "3", "7", "9", "6", "5", "1", "8", "0", "4"]);
   });
 
   test("Equality", () => {
@@ -197,14 +195,14 @@ export let runMapTests = () => {
     let data = initTernaryTreeMap(dict);
 
     var i = 0;
-    for (let [k, v] of toPairsIterator(data)) {
+    for (let [k, v] of toPairs(data)) {
       i = i + 1;
     }
 
     check(i == 4);
 
     i = 0;
-    for (let key of toPairsIterator(data)) {
+    for (let key of toPairs(data)) {
       i = i + 1;
     }
     check(i == 4);
@@ -219,10 +217,10 @@ export let runMapTests = () => {
     let data = initTernaryTreeMap(dict);
 
     var i = 0;
-    mapEach(data, (k: string, v: number): void => {
+    for (let [k, v] of toPairs(data)) {
       // echo "..{k}-{v}.."
       i = i + 1;
-    });
+    }
     check(i == 100);
   });
 };

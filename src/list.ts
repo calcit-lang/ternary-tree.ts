@@ -125,58 +125,28 @@ export function formatListInline<T>(tree: TernaryTreeList<T>): string {
   }
 }
 
-function writeArray<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<T>, idx: RefInt): void {
-  if (tree == null) {
-    // discard
-  } else {
+export function* listToItems<T>(tree: TernaryTreeList<T>): Generator<T> {
+  if (tree != null) {
     switch (tree.kind) {
       case TernaryTreeKind.ternaryTreeLeaf: {
-        acc[idx.value] = tree.value;
-        idx.value = idx.value + 1;
+        yield tree.value;
         break;
       }
       case TernaryTreeKind.ternaryTreeBranch: {
         if (tree.left != null) {
-          writeArray(tree.left, acc, idx);
+          for (let x of listToItems(tree.left)) {
+            yield x;
+          }
         }
         if (tree.middle != null) {
-          writeArray(tree.middle, acc, idx);
+          for (let x of listToItems(tree.middle)) {
+            yield x;
+          }
         }
         if (tree.right != null) {
-          writeArray(tree.right, acc, idx);
-        }
-        break;
-      }
-    }
-  }
-}
-
-export function listToArray<T>(tree: TernaryTreeList<T>): Array<T> {
-  let acc = new Array<T>(listLen(tree));
-  let counter: RefInt = { value: 0 };
-  counter.value = 0;
-  writeArray(tree, acc, counter);
-  return acc;
-}
-
-export function listEach<T>(tree: TernaryTreeList<T>, f: (x: T) => void): void {
-  if (tree == null) {
-    //
-  } else {
-    switch (tree.kind) {
-      case TernaryTreeKind.ternaryTreeLeaf: {
-        f(tree.value);
-        break;
-      }
-      case TernaryTreeKind.ternaryTreeBranch: {
-        if (tree.left != null) {
-          listEach(tree.left, f);
-        }
-        if (tree.middle != null) {
-          listEach(tree.middle, f);
-        }
-        if (tree.right != null) {
-          listEach(tree.right, f);
+          for (let x of listToItems(tree.right)) {
+            yield x;
+          }
         }
         break;
       }
@@ -280,19 +250,17 @@ function toLeavesArray<T>(tree: TernaryTreeList<T>): Array<TernaryTreeList<T>> {
   return acc;
 }
 
-// https://forum.nim-lang.org/t/5697
-export function* listItems<T>(tree: TernaryTreeList<T>): Generator<T> {
+export function* indexToItems<T>(tree: TernaryTreeList<T>): Generator<T> {
   for (let idx = 0; idx < listLen(tree); idx++) {
     yield listGet(tree, idx);
   }
 }
 
-export function* listPairs<T>(tree: TernaryTreeList<T>): Generator<[number, T]> {
-  let items = listToArray(tree);
-
-  for (let idx in items) {
-    let x = items[idx];
-    yield [parseInt(idx), x];
+export function* listToPairs<T>(tree: TernaryTreeList<T>): Generator<[number, T]> {
+  let idx = 0;
+  for (let x of listToItems(tree)) {
+    yield [idx, x];
+    idx = idx + 1;
   }
 }
 

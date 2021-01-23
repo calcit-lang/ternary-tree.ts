@@ -20,11 +20,6 @@ export type TernaryTreeListTheLeaf<T> = {
 
 export type TernaryTreeList<T> = TernaryTreeListTheBranch<T> | TernaryTreeListTheLeaf<T>;
 
-export type TernaryTreeMapKeyValuePair<K, V> = {
-  k: K;
-  v: V;
-};
-
 export type TernaryTreeMapHashEntry<K, V> = {
   hash: Hash;
   pairs: Array<[K, V]>;

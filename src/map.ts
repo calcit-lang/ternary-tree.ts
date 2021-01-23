@@ -1,20 +1,5 @@
-import {
-  TernaryTreeMap,
-  TernaryTreeKind,
-  TernaryTreeMapTheLeaf,
-  TernaryTreeMapTheBranch,
-  TernaryTreeMapKeyValuePair,
-  RefInt,
-  Hash,
-  hashGenerator,
-  TernaryTreeMapHashEntry,
-} from "./types";
+import { TernaryTreeMap, TernaryTreeKind, TernaryTreeMapTheLeaf, TernaryTreeMapTheBranch, RefInt, Hash, hashGenerator, TernaryTreeMapHashEntry } from "./types";
 import { divideTernarySizes, roughIntPow, cmp, dataEqual } from "./utils";
-
-export type TernaryTreeMapKeyValuePairOfLeaf<K, V> = {
-  k: K;
-  v: TernaryTreeMap<K, V>;
-};
 
 let emptyBranch: TernaryTreeMap<any, any> = null as any;
 let nilResult = null as any;
@@ -458,7 +443,7 @@ function rangeContainsHash<K, T>(tree: TernaryTreeMap<K, T>, thisHash: Hash): bo
   }
 }
 
-export function assocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: Hash = null as any): TernaryTreeMap<K, T> {
+function assocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: Hash = null as any): TernaryTreeMap<K, T> {
   if (tree == null || isMapEmpty(tree)) {
     throw new Error("Cannot call assoc on nil");
   }
@@ -934,79 +919,31 @@ export function dissocMap<K, T>(tree: TernaryTreeMap<K, T>, key: K): TernaryTree
   }
 }
 
-export function mapEach<K, T>(tree: TernaryTreeMap<K, T>, f: (k: K, v: T) => void): void {
-  if (tree == null) {
-    return;
-  }
-  if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
-    for (let pair of tree.elements) {
-      f(pair[0], pair[1]);
-    }
-  } else {
-    mapEach(tree.left, f);
-    mapEach(tree.middle, f);
-    mapEach(tree.right, f);
-  }
-}
-
-export function toPairs<K, T>(tree: TernaryTreeMap<K, T>): Array<[K, T]> {
-  let result: Array<[K, T]> = [];
-  if (tree == null) {
-    return [];
-  }
-  if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
-    for (let pair of tree.elements) {
-      result.push(pair);
-    }
-  } else {
-    for (let branch of [tree.left, tree.middle, tree.right]) {
-      for (let item of toPairs(branch)) {
-        result.push(item);
+export function* toPairs<K, T>(tree: TernaryTreeMap<K, T>): Generator<[K, T]> {
+  if (tree != null) {
+    if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
+      for (let pair of tree.elements) {
+        yield pair;
+      }
+    } else {
+      for (let branch of [tree.left, tree.middle, tree.right]) {
+        for (let item of toPairs(branch)) {
+          yield item;
+        }
       }
     }
   }
-
-  return result;
 }
 
-export function* toPairsIterator<K, T>(tree: TernaryTreeMap<K, T>): Generator<[K, T]> {
-  let items = toHashSortedPairs(tree);
-
-  for (let item of items) {
-    yield item;
+export function* toKeys<K, V>(tree: TernaryTreeMap<K, V>): Generator<K> {
+  for (let item of toPairs(tree)) {
+    yield item[0];
   }
 }
-
-export function mapKeys<K, T>(tree: TernaryTreeMap<K, T>): Array<K> {
-  let result: Array<K> = [];
-
-  if (tree == null) {
-    return [];
+export function* toValues<K, V>(tree: TernaryTreeMap<K, V>): Generator<V> {
+  for (let item of toPairs(tree)) {
+    yield item[1];
   }
-  if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
-    for (let pair of tree.elements) {
-      result.push(pair[0]);
-    }
-  } else {
-    for (let branch of [tree.left, tree.middle, tree.right]) {
-      for (let item of mapKeys(branch)) {
-        result.push(item);
-      }
-    }
-  }
-  return result;
-}
-
-export function* mapItems<K, T>(tree: TernaryTreeMap<K, T>): Generator<K> {
-  let items = mapKeys(tree);
-
-  for (let x of items) {
-    yield x;
-  }
-}
-
-function pairToString<K, V>(p: TernaryTreeMapKeyValuePair<K, V>): string {
-  return `${p.k}:${p.v}`;
 }
 
 export function mapEqual<K, V>(xs: TernaryTreeMap<K, V>, ys: TernaryTreeMap<K, V>): boolean {
@@ -1021,8 +958,7 @@ export function mapEqual<K, V>(xs: TernaryTreeMap<K, V>, ys: TernaryTreeMap<K, V
     return true;
   }
 
-  let keys = mapKeys(xs);
-  for (let key of keys) {
+  for (let key of toKeys(xs)) {
     let vx = mapGet(xs, key);
     let vy = mapGet(ys, key);
 
@@ -1038,7 +974,7 @@ export function mapEqual<K, V>(xs: TernaryTreeMap<K, V>, ys: TernaryTreeMap<K, V
 export function merge<K, T>(xs: TernaryTreeMap<K, T>, ys: TernaryTreeMap<K, T>): TernaryTreeMap<K, T> {
   let ret = xs;
   let counted = 0;
-  mapEach(ys, (key: K, item: T): void => {
+  for (let [key, item] of toPairs(ys)) {
     ret = assocMap(ret, key, item);
     // # TODO pickd loop by experience
     if (counted > 700) {
@@ -1047,7 +983,7 @@ export function merge<K, T>(xs: TernaryTreeMap<K, T>, ys: TernaryTreeMap<K, T>):
     } else {
       counted = counted + 1;
     }
-  });
+  }
   return ret;
 }
 
@@ -1055,9 +991,9 @@ export function merge<K, T>(xs: TernaryTreeMap<K, T>, ys: TernaryTreeMap<K, T>):
 export function mergeSkip<K, T>(xs: TernaryTreeMap<K, T>, ys: TernaryTreeMap<K, T>, skipped: T): TernaryTreeMap<K, T> {
   let ret = xs;
   let counted = 0;
-  mapEach(ys, (key: K, item: T): void => {
+  for (let [key, item] of toPairs(ys)) {
     if (dataEqual(item, skipped)) {
-      return;
+      continue;
     }
     ret = assocMap(ret, key, item);
     // # TODO pickd loop by experience
@@ -1067,7 +1003,7 @@ export function mergeSkip<K, T>(xs: TernaryTreeMap<K, T>, ys: TernaryTreeMap<K, 
     } else {
       counted = counted + 1;
     }
-  });
+  }
   return ret;
 }
 
