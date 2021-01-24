@@ -22,6 +22,7 @@ export function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): T;
 export function* toPairs<K, T>(tree: TernaryTreeMap<K, T>): Generator<[K, T]>;
 export function* toKeys<K, V>(tree: TernaryTreeMap<K, V>): Generator<K>;
 export function* toValues<K, V>(tree: TernaryTreeMap<K, V>): Generator<V>;
+export function toPairsArray<K, T>(tree: TernaryTreeMap<K, T>): Array<[K, T]>;
 
 export function assocMap<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, disableBalancing: boolean = false): TernaryTreeMap<K, T>;
 export function dissocMap<K, T>(tree: TernaryTreeMap<K, T>, key: K): TernaryTreeMap<K, T>;
