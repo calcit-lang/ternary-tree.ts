@@ -20,9 +20,9 @@ export type TernaryTreeListTheLeaf<T> = {
 
 export type TernaryTreeList<T> = TernaryTreeListTheBranch<T> | TernaryTreeListTheLeaf<T>;
 
-export type TernaryTreeMapKeyValuePair<K, V> = {
-  k: K;
-  v: V;
+export type TernaryTreeMapHashEntry<K, V> = {
+  hash: Hash;
+  pairs: Array<[K, V]>;
 };
 
 export type TernaryTreeMapTheBranch<K, T> = {
@@ -37,7 +37,7 @@ export type TernaryTreeMapTheBranch<K, T> = {
 export type TernaryTreeMapTheLeaf<K, T> = {
   kind: TernaryTreeKind.ternaryTreeLeaf;
   hash: number;
-  elements: Array<TernaryTreeMapKeyValuePair<K, T>>; // handle hash collapsing
+  elements: Array<[K, T]>; // handle hash collapsing
 };
 
 export type TernaryTreeMap<K, T> = TernaryTreeMapTheBranch<K, T> | TernaryTreeMapTheLeaf<K, T>;
@@ -45,27 +45,6 @@ export type TernaryTreeMap<K, T> = TernaryTreeMapTheBranch<K, T> | TernaryTreeMa
 export type RefInt = {
   value: number;
 };
-
-export type Option<T> = {
-  existed: boolean;
-  value: T;
-};
-
-export function none<T>(): Option<T> {
-  let result: Option<T> = {
-    existed: false,
-    value: null as any,
-  };
-  return result;
-}
-
-export function some<T>(v: T): Option<T> {
-  let result: Option<T> = {
-    existed: true,
-    value: v,
-  };
-  return result;
-}
 
 export type Hash = number; // TODO
 

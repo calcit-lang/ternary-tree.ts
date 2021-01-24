@@ -1,8 +1,7 @@
-import { some, none, hashGenerator } from "./types";
+import { hashGenerator } from "./types";
 import { test, check, cmp, deepEqual, justDisplay } from "./utils";
 import {
   initTernaryTreeMap,
-  mapKeys,
   toHashSortedPairs,
   merge,
   mergeSkip,
@@ -13,14 +12,14 @@ import {
   contains,
   mapGet,
   toPairs,
-  toPairsIterator,
   initEmptyTernaryTreeMap,
   sameMapShape,
   checkMapStructure,
   mapLen,
   mapToString,
-  mapEach,
   mapEqual,
+  toKeys,
+  toPairsArray,
 } from "./map";
 
 export let runMapTests = () => {
@@ -49,8 +48,8 @@ export let runMapTests = () => {
     check(contains(data10, "1") == true);
     check(contains(data10, "11") == false);
 
-    check(deepEqual(mapGet(data10, "1"), some(11)));
-    check(deepEqual(mapGet(data10, "11"), none()));
+    check(deepEqual(mapGet(data10, "1"), 11));
+    check(deepEqual(mapGet(data10, "11"), null));
 
     let emptyData: Map<string, number> = new Map();
     check(mapEqual(initEmptyTernaryTreeMap<string, number>(), initTernaryTreeMap(emptyData)));
@@ -108,7 +107,7 @@ export let runMapTests = () => {
     }
   });
 
-  test("to seq", () => {
+  test("to array", () => {
     var dict: Map<string, number> = new Map();
     for (let idx = 0; idx < 10; idx++) {
       dict.set(`${idx}`, idx + 10);
@@ -118,7 +117,9 @@ export let runMapTests = () => {
 
     // TODO
     // justDisplay((mapToString(toPairs(data))) , "@[2:12, 3:13, 7:17, 9:19, 6:16, 5:15, 1:11, 8:18, 0:10, 4:14]")
-    justDisplay(mapKeys(data), ["2", "3", "7", "9", "6", "5", "1", "8", "0", "4"]);
+    justDisplay([...toKeys(data)], ["2", "3", "7", "9", "6", "5", "1", "8", "0", "4"]);
+
+    check(deepEqual(toPairsArray(data), [...toPairs(data)]));
   });
 
   test("Equality", () => {
@@ -180,10 +181,10 @@ export let runMapTests = () => {
     let b = initTernaryTreeMap(dict2);
 
     let c = mergeSkip(a, b, 11);
-    check(deepEqual(mapGet(c, "0"), some(10)));
-    check(deepEqual(mapGet(c, "1"), some(12)));
-    check(deepEqual(mapGet(c, "2"), some(13)));
-    check(deepEqual(mapGet(c, "3"), some(14)));
+    check(deepEqual(mapGet(c, "0"), 10));
+    check(deepEqual(mapGet(c, "1"), 12));
+    check(deepEqual(mapGet(c, "2"), 13));
+    check(deepEqual(mapGet(c, "3"), 14));
   });
 
   test("iterator", () => {
@@ -197,14 +198,14 @@ export let runMapTests = () => {
     let data = initTernaryTreeMap(dict);
 
     var i = 0;
-    for (let [k, v] of toPairsIterator(data)) {
+    for (let [k, v] of toPairs(data)) {
       i = i + 1;
     }
 
     check(i == 4);
 
     i = 0;
-    for (let key of toPairsIterator(data)) {
+    for (let key of toPairs(data)) {
       i = i + 1;
     }
     check(i == 4);
@@ -219,10 +220,10 @@ export let runMapTests = () => {
     let data = initTernaryTreeMap(dict);
 
     var i = 0;
-    mapEach(data, (k: string, v: number): void => {
+    for (let [k, v] of toPairs(data)) {
       // echo "..{k}-{v}.."
       i = i + 1;
-    });
+    }
     check(i == 100);
   });
 };

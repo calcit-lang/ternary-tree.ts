@@ -125,58 +125,28 @@ export function formatListInline<T>(tree: TernaryTreeList<T>): string {
   }
 }
 
-function writeSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<T>, idx: RefInt): void {
-  if (tree == null) {
-    // discard
-  } else {
+export function* listToItems<T>(tree: TernaryTreeList<T>): Generator<T> {
+  if (tree != null) {
     switch (tree.kind) {
       case TernaryTreeKind.ternaryTreeLeaf: {
-        acc[idx.value] = tree.value;
-        idx.value = idx.value + 1;
+        yield tree.value;
         break;
       }
       case TernaryTreeKind.ternaryTreeBranch: {
         if (tree.left != null) {
-          writeSeq(tree.left, acc, idx);
+          for (let x of listToItems(tree.left)) {
+            yield x;
+          }
         }
         if (tree.middle != null) {
-          writeSeq(tree.middle, acc, idx);
+          for (let x of listToItems(tree.middle)) {
+            yield x;
+          }
         }
         if (tree.right != null) {
-          writeSeq(tree.right, acc, idx);
-        }
-        break;
-      }
-    }
-  }
-}
-
-export function listToSeq<T>(tree: TernaryTreeList<T>): Array<T> {
-  let acc = new Array<T>(listLen(tree));
-  let counter: RefInt = { value: 0 };
-  counter.value = 0;
-  writeSeq(tree, acc, counter);
-  return acc;
-}
-
-export function listEach<T>(tree: TernaryTreeList<T>, f: (x: T) => void): void {
-  if (tree == null) {
-    //
-  } else {
-    switch (tree.kind) {
-      case TernaryTreeKind.ternaryTreeLeaf: {
-        f(tree.value);
-        break;
-      }
-      case TernaryTreeKind.ternaryTreeBranch: {
-        if (tree.left != null) {
-          listEach(tree.left, f);
-        }
-        if (tree.middle != null) {
-          listEach(tree.middle, f);
-        }
-        if (tree.right != null) {
-          listEach(tree.right, f);
+          for (let x of listToItems(tree.right)) {
+            yield x;
+          }
         }
         break;
       }
@@ -244,7 +214,7 @@ export function indexOf<T>(tree: TernaryTreeList<T>, item: T): number {
   }
 }
 
-function writeLeavesSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<TernaryTreeList<T>>, idx: RefInt): void {
+function writeLeavesArray<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<TernaryTreeList<T>>, idx: RefInt): void {
   if (tree == null) {
     //
   } else {
@@ -256,13 +226,13 @@ function writeLeavesSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<Ternar
       }
       case TernaryTreeKind.ternaryTreeBranch: {
         if (tree.left != null) {
-          writeLeavesSeq(tree.left, acc, idx);
+          writeLeavesArray(tree.left, acc, idx);
         }
         if (tree.middle != null) {
-          writeLeavesSeq(tree.middle, acc, idx);
+          writeLeavesArray(tree.middle, acc, idx);
         }
         if (tree.right != null) {
-          writeLeavesSeq(tree.right, acc, idx);
+          writeLeavesArray(tree.right, acc, idx);
         }
         break;
       }
@@ -273,31 +243,24 @@ function writeLeavesSeq<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<Ternar
   }
 }
 
-export function toLeavesSeq<T>(tree: TernaryTreeList<T>): Array<TernaryTreeList<T>> {
+function toLeavesArray<T>(tree: TernaryTreeList<T>): Array<TernaryTreeList<T>> {
   let acc = new Array<TernaryTreeList<T>>(listLen(tree));
   let counter: RefInt = { value: 0 };
-  writeLeavesSeq(tree, acc, counter);
+  writeLeavesArray(tree, acc, counter);
   return acc;
 }
 
-// https://forum.nim-lang.org/t/5697
-export function* listItems<T>(tree: TernaryTreeList<T>): Generator<T> {
-  // let seqItems = tree.toSeq()
-
-  // for x in seqItems:
-  //   yield x
-
+export function* indexToItems<T>(tree: TernaryTreeList<T>): Generator<T> {
   for (let idx = 0; idx < listLen(tree); idx++) {
     yield listGet(tree, idx);
   }
 }
 
-export function* listPairs<T>(tree: TernaryTreeList<T>): Generator<[number, T]> {
-  let seqItems = listToSeq(tree);
-
-  for (let idx in seqItems) {
-    let x = seqItems[idx];
-    yield [parseInt(idx), x];
+export function* listToPairs<T>(tree: TernaryTreeList<T>): Generator<[number, T]> {
+  let idx = 0;
+  for (let x of listToItems(tree)) {
+    yield [idx, x];
+    idx = idx + 1;
   }
 }
 
@@ -871,7 +834,7 @@ export function assocAfter<T>(tree: TernaryTreeList<T>, idx: number, item: T, af
 export function forceListInplaceBalancing<T>(tree: TernaryTreeList<T>): void {
   if (tree.kind === TernaryTreeKind.ternaryTreeBranch) {
     // echo "Force inplace balancing case list: ", tree.size
-    let ys = toLeavesSeq(tree);
+    let ys = toLeavesArray(tree);
     let newTree = makeTernaryTreeList(ys.length, 0, ys) as TernaryTreeListTheBranch<T>;
     // let newTree = initTernaryTreeList(ys)
     tree.left = newTree.left;

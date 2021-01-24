@@ -1,15 +1,13 @@
 import {
   listToString,
   initTernaryTreeList,
-  listEach,
   indexOf,
   findIndex,
   reverse,
   checkListStructure,
-  listToSeq,
   slice,
-  listPairs,
-  listItems,
+  listToPairs,
+  listToItems,
   formatListInline,
   sameListShape,
   assocBefore,
@@ -29,6 +27,7 @@ import {
   listLen,
   forceListInplaceBalancing,
   listEqual,
+  indexToItems,
 } from "./list";
 
 import { test, check, arrayEqual } from "./utils";
@@ -47,7 +46,11 @@ export let runListTests = () => {
     check(checkListStructure(data11));
 
     check(formatListInline(data11) == "((1 (2 _ 3) 4) (5 6 7) (8 (9 _ 10) 11))");
-    check(arrayEqual<number>(origin11, listToSeq(data11)));
+    check(
+      arrayEqual<number>(origin11, [...listToItems(data11)])
+    );
+
+    check(arrayEqual<number>([...listToItems(data11)], [...indexToItems(data11)]));
 
     let emptyXs = new Array<number>(0);
     check(listEqual(initEmptyTernaryTreeList<number>(), initTernaryTreeList(emptyXs)));
@@ -164,14 +167,14 @@ export let runListTests = () => {
     let data4 = initTernaryTreeList(origin4);
 
     var i = 0;
-    for (let item of listItems(data4)) {
+    for (let item of listToItems(data4)) {
       i = i + 1;
     }
 
     check(i == 4);
 
     i = 0;
-    for (let [idx, item] of listPairs(data4)) {
+    for (let [idx, item] of listToPairs(data4)) {
       i = i + idx;
     }
 
@@ -205,7 +208,7 @@ export let runListTests = () => {
 
     for (let i = 0; i < 40; i++) {
       for (let j = i; j < 40; j++) {
-        check(arrayEqual<number>(listToSeq(slice(data, i, j)), list40.slice(i, j)));
+        check(arrayEqual<number>([...listToItems(slice(data, i, j))], list40.slice(i, j)));
       }
     }
   });
@@ -213,16 +216,17 @@ export let runListTests = () => {
   test("reverse", () => {
     let data = initTernaryTreeList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     let reversedData = reverse(data);
-    check(arrayEqual(listToSeq(data).reverse(), listToSeq(reversedData)));
+    check(arrayEqual([...listToItems(data)].reverse(), [...listToItems(reversedData)]));
     check(checkListStructure(reversedData));
   });
 
-  test("list each", () => {
+  test("list traverse", () => {
     var i = 0;
     let data = initTernaryTreeList<number>([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-    listEach(data, (x: number) => {
+    for (let x of listToItems(data)) {
       i = i + 1;
-    });
+    }
+
     check(i == 10);
   });
 
