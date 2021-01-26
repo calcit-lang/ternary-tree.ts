@@ -37,7 +37,7 @@ export let runListTests = () => {
     check(
       listToString(
         initTernaryTreeList<number>([1, 2, 3, 4])
-      ) == "TernaryTreeList[4, ...]"
+      ) === "TernaryTreeList[4, ...]"
     );
 
     let origin11 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
@@ -45,7 +45,7 @@ export let runListTests = () => {
 
     check(checkListStructure(data11));
 
-    check(formatListInline(data11) == "((1 (2 _ 3) 4) (5 6 7) (8 (9 _ 10) 11))");
+    check(formatListInline(data11) === "((1 (2 _ 3) 4) (5 6 7) (8 (9 _ 10) 11))");
     check(
       arrayEqual<number>(origin11, [...listToItems(data11)])
     );
@@ -62,76 +62,83 @@ export let runListTests = () => {
 
     // get
     for (let idx = 0; idx < origin11.length; idx++) {
-      check(origin11[idx] == listGet(data11, idx));
+      check(origin11[idx] === listGet(data11, idx));
     }
 
-    check(first(data11) == 1);
-    check(last(data11) == 11);
+    check(first(data11) === 1);
+    check(last(data11) === 11);
 
     // assoc
     let origin5 = [1, 2, 3, 4, 5];
     let data5 = initTernaryTreeList(origin5);
     let updated = assocList(data5, 3, 10);
-    check(listGet(updated, 3) == 10);
-    check(listGet(data5, 3) == 4);
-    check(listLen(updated) == listLen(data5));
+    check(listGet(updated, 3) === 10);
+    check(listGet(data5, 3) === 4);
+    check(listLen(updated) === listLen(data5));
 
     for (let idx = 0; idx < listLen(data5); idx++) {
       // echo data5.dissoc(idx).formatInline
-      check(listLen(dissocList(data5, idx)) == listLen(data5) - 1);
+      check(listLen(dissocList(data5, idx)) === listLen(data5) - 1);
     }
 
-    check(formatListInline(data5) == "((1 _ 2) 3 (4 _ 5))");
-    check(formatListInline(dissocList(data5, 0)) == "(2 3 (4 _ 5))");
-    check(formatListInline(dissocList(data5, 1)) == "(1 3 (4 _ 5))");
-    check(formatListInline(dissocList(data5, 2)) == "((1 _ 2) _ (4 _ 5))");
-    check(formatListInline(dissocList(data5, 3)) == "((1 _ 2) 3 5)");
-    check(formatListInline(dissocList(data5, 4)) == "((1 _ 2) 3 4)");
+    check(formatListInline(data5) === "((1 _ 2) 3 (4 _ 5))");
+    check(formatListInline(dissocList(data5, 0)) === "(2 3 (4 _ 5))");
+    check(formatListInline(dissocList(data5, 1)) === "(1 3 (4 _ 5))");
+    check(formatListInline(dissocList(data5, 2)) === "((1 _ 2) _ (4 _ 5))");
+    check(formatListInline(dissocList(data5, 3)) === "((1 _ 2) 3 5)");
+    check(formatListInline(dissocList(data5, 4)) === "((1 _ 2) 3 4)");
 
-    check(formatListInline(rest(initTernaryTreeList([1]))) == "(_ _ _)");
-    check(formatListInline(rest(initTernaryTreeList([1, 2]))) == "2");
-    check(formatListInline(rest(initTernaryTreeList([1, 2, 3]))) == "(_ 2 3)");
-    check(formatListInline(rest(initTernaryTreeList([1, 2, 3, 4]))) == "(_ (2 _ 3) 4)");
-    check(formatListInline(rest(initTernaryTreeList([1, 2, 3, 4, 5]))) == "(2 3 (4 _ 5))");
+    check(formatListInline(rest(initTernaryTreeList([1]))) === "(_ _ _)");
+    check(formatListInline(rest(initTernaryTreeList([1, 2]))) === "2");
+    check(formatListInline(rest(initTernaryTreeList([1, 2, 3]))) === "(_ 2 3)");
+    check(formatListInline(rest(initTernaryTreeList([1, 2, 3, 4]))) === "(_ (2 _ 3) 4)");
+    check(formatListInline(rest(initTernaryTreeList([1, 2, 3, 4, 5]))) === "(2 3 (4 _ 5))");
 
-    check(formatListInline(butlast(initTernaryTreeList([1]))) == "(_ _ _)");
-    check(formatListInline(butlast(initTernaryTreeList([1, 2]))) == "1");
-    check(formatListInline(butlast(initTernaryTreeList([1, 2, 3]))) == "(1 2 _)");
-    check(formatListInline(butlast(initTernaryTreeList([1, 2, 3, 4]))) == "(1 (2 _ 3) _)");
-    check(formatListInline(butlast(initTernaryTreeList([1, 2, 3, 4, 5]))) == "((1 _ 2) 3 4)");
+    check(formatListInline(butlast(initTernaryTreeList([1]))) === "(_ _ _)");
+    check(formatListInline(butlast(initTernaryTreeList([1, 2]))) === "1");
+    check(formatListInline(butlast(initTernaryTreeList([1, 2, 3]))) === "(1 2 _)");
+    check(formatListInline(butlast(initTernaryTreeList([1, 2, 3, 4]))) === "(1 (2 _ 3) _)");
+    check(formatListInline(butlast(initTernaryTreeList([1, 2, 3, 4, 5]))) === "((1 _ 2) 3 4)");
   });
 
   test("list insertions", () => {
     let origin5 = [1, 2, 3, 4, 5];
     let data5 = initTernaryTreeList(origin5);
 
-    check(formatListInline(data5) == "((1 _ 2) 3 (4 _ 5))");
+    check(formatListInline(data5) === "((1 _ 2) 3 (4 _ 5))");
 
-    check(formatListInline(insert(data5, 0, 10, false)) == "(_ 10 ((1 _ 2) 3 (4 _ 5)))");
-    check(formatListInline(insert(data5, 0, 10, true)) == "((1 10 2) 3 (4 _ 5))");
-    check(formatListInline(insert(data5, 1, 10, false)) == "((1 10 2) 3 (4 _ 5))");
-    check(formatListInline(insert(data5, 1, 10, true)) == "((1 2 10) 3 (4 _ 5))");
-    check(formatListInline(insert(data5, 2, 10, false)) == "((1 _ 2) (_ 10 3) (4 _ 5))");
-    check(formatListInline(insert(data5, 2, 10, true)) == "((1 _ 2) (3 10 _) (4 _ 5))");
-    check(formatListInline(insert(data5, 3, 10, false)) == "((1 _ 2) 3 (10 4 5))");
-    check(formatListInline(insert(data5, 3, 10, true)) == "((1 _ 2) 3 (4 10 5))");
-    check(formatListInline(insert(data5, 4, 10, false)) == "((1 _ 2) 3 (4 10 5))");
-    check(formatListInline(insert(data5, 4, 10, true)) == "(((1 _ 2) 3 (4 _ 5)) 10 _)");
+    check(formatListInline(insert(data5, 0, 10, false)) === "(_ 10 ((1 _ 2) 3 (4 _ 5)))");
+    check(formatListInline(insert(data5, 0, 10, true)) === "((1 10 2) 3 (4 _ 5))");
+    check(formatListInline(insert(data5, 1, 10, false)) === "((1 10 2) 3 (4 _ 5))");
+    check(formatListInline(insert(data5, 1, 10, true)) === "((1 2 10) 3 (4 _ 5))");
+    check(formatListInline(insert(data5, 2, 10, false)) === "((1 _ 2) (_ 10 3) (4 _ 5))");
+    check(formatListInline(insert(data5, 2, 10, true)) === "((1 _ 2) (3 10 _) (4 _ 5))");
+    check(formatListInline(insert(data5, 3, 10, false)) === "((1 _ 2) 3 (10 4 5))");
+    check(formatListInline(insert(data5, 3, 10, true)) === "((1 _ 2) 3 (4 10 5))");
+    check(formatListInline(insert(data5, 4, 10, false)) === "((1 _ 2) 3 (4 10 5))");
+    check(formatListInline(insert(data5, 4, 10, true)) === "(((1 _ 2) 3 (4 _ 5)) 10 _)");
 
     let origin4 = [1, 2, 3, 4];
     let data4 = initTernaryTreeList(origin4);
 
-    check(formatListInline(assocBefore(data4, 3, 10)) == "(1 (2 _ 3) (_ 10 4))");
-    check(formatListInline(assocAfter(data4, 3, 10)) == "(1 (2 _ 3) (4 10 _))");
+    check(formatListInline(assocBefore(data4, 3, 10)) === "(1 (2 _ 3) (_ 10 4))");
+    check(formatListInline(assocAfter(data4, 3, 10)) === "(1 (2 _ 3) (4 10 _))");
 
-    check(formatListInline(prepend(data4, 10)) == "((_ 10 1) (2 _ 3) 4)");
-    check(formatListInline(append(data4, 10)) == "(1 (2 _ 3) (4 10 _))");
+    check(formatListInline(prepend(data4, 10)) === "((_ 10 1) (2 _ 3) 4)");
+    check(formatListInline(append(data4, 10)) === "(1 (2 _ 3) (4 10 _))");
+  });
 
-    let origin2 = [1, 2];
-    let data2 = initTernaryTreeList(origin2);
-    check(formatListInline(concat(data2, data4)) == "((1 _ 2) _ (1 (2 _ 3) 4))");
+  test("concat", () => {
+    let data1 = initTernaryTreeList([1, 2]);
+    let data2 = initTernaryTreeList([3, 4]);
 
-    check(formatListInline(concat(initTernaryTreeList<number>([]), data2)) == "(1 _ 2)");
+    let data3 = initTernaryTreeList([5, 6]);
+    let data4 = initTernaryTreeList([7, 8]);
+
+    check(formatListInline(concat(data1, data2)) === "((1 _ 2) _ (3 _ 4))");
+    check(formatListInline(concat(initTernaryTreeList<number>([]), data1)) === "(1 _ 2)");
+    check(formatListInline(concat(data1, data2, data3)) === "((1 _ 2) (3 _ 4) (5 _ 6))");
+    check(formatListInline(concat(data1, data2, data3, data4)) === "((1 _ 2) ((3 _ 4) _ (5 _ 6)) (7 _ 8))");
   });
 
   test("check(equality", () => {
@@ -140,9 +147,9 @@ export let runListTests = () => {
     let data4n = initTernaryTreeList(origin4);
     let data4Made = prepend(initTernaryTreeList([2, 3, 4]), 1);
 
-    check(sameListShape(data4, data4) == true);
-    check(sameListShape(data4, data4n) == true);
-    check(sameListShape(data4, data4Made) == false);
+    check(sameListShape(data4, data4) === true);
+    check(sameListShape(data4, data4n) === true);
+    check(sameListShape(data4, data4Made) === false);
 
     check(listEqual(data4, data4n));
     check(listEqual(data4, data4Made));
@@ -156,9 +163,9 @@ export let runListTests = () => {
       data = append(data, idx, true);
     }
     // echo data.formatInline
-    check(formatListInline(data) == "(((0 1 2) (3 4 5) (6 7 8)) ((9 10 11) (12 13 14) (15 16 17)) (18 19 _))");
+    check(formatListInline(data) === "(((0 1 2) (3 4 5) (6 7 8)) ((9 10 11) (12 13 14) (15 16 17)) (18 19 _))");
     forceListInplaceBalancing(data);
-    check(formatListInline(data) == "(((0 _ 1) (2 3 4) (5 _ 6)) ((7 _ 8) (9 _ 10) (11 _ 12)) ((13 _ 14) (15 16 17) (18 _ 19)))");
+    check(formatListInline(data) === "(((0 _ 1) (2 3 4) (5 _ 6)) ((7 _ 8) (9 _ 10) (11 _ 12)) ((13 _ 14) (15 16 17) (18 _ 19)))");
     // echo data.formatInline
   });
 
@@ -171,14 +178,14 @@ export let runListTests = () => {
       i = i + 1;
     }
 
-    check(i == 4);
+    check(i === 4);
 
     i = 0;
     for (let [idx, item] of listToPairs(data4)) {
       i = i + idx;
     }
 
-    check(i == 6);
+    check(i === 6);
   });
 
   test("check(structure)", () => {
@@ -227,14 +234,14 @@ export let runListTests = () => {
       i = i + 1;
     }
 
-    check(i == 10);
+    check(i === 10);
   });
 
   test("index of", () => {
     let data = initTernaryTreeList<number>([1, 2, 3, 4, 5, 6, 7, 8]);
-    check(indexOf(data, 2) == 1);
-    check(findIndex(data, (x: number): boolean => x == 2) == 1);
-    check(indexOf(data, 9) == -1);
-    check(findIndex(data, (x: number): boolean => x == 9) == -1);
+    check(indexOf(data, 2) === 1);
+    check(findIndex(data, (x: number): boolean => x === 2) === 1);
+    check(indexOf(data, 9) === -1);
+    check(findIndex(data, (x: number): boolean => x === 9) === -1);
   });
 };
