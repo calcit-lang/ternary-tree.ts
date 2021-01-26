@@ -880,17 +880,9 @@ export function append<T>(tree: TernaryTreeList<T>, item: T, disableBalancing: b
   return result;
 }
 
-export function concat<T>(xs: TernaryTreeList<T>, ys: TernaryTreeList<T>): TernaryTreeList<T> {
-  if (xs == null || listLen(xs) === 0) return ys;
-  if (ys == null || listLen(ys) === 0) return xs;
-  let result = {
-    kind: TernaryTreeKind.ternaryTreeBranch,
-    size: xs.size + ys.size,
-    depth: decideParentDepth(xs, emptyBranch, ys),
-    left: xs,
-    middle: emptyBranch,
-    right: ys,
-  } as TernaryTreeList<T>;
+export function concat<T>(...xsGroups: Array<TernaryTreeList<T>>): TernaryTreeList<T> {
+  xsGroups = xsGroups.filter((xs) => listLen(xs) > 0);
+  let result = makeTernaryTreeList(xsGroups.length, 0, xsGroups);
   maybeReblance(result);
   return result;
 }
