@@ -38,11 +38,11 @@ export function makeTernaryTreeList<T>(size: number, offset: number, xs: /* var 
       let right = xs[offset + 1];
       let result: TernaryTreeList<T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
-        size: 2,
+        size: listLen(left) + listLen(right),
         left: left,
         middle: emptyBranch,
         right: right,
-        depth: 2,
+        depth: decideParentDepth(left, right),
       };
       return result;
     }
@@ -52,11 +52,11 @@ export function makeTernaryTreeList<T>(size: number, offset: number, xs: /* var 
       let right = xs[offset + 2];
       let result: TernaryTreeList<T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
-        size: 3,
+        size: listLen(left) + listLen(middle) + listLen(right),
         left: left,
         middle: middle,
         right: right,
-        depth: 2,
+        depth: decideParentDepth(left, middle, right),
       };
       return result;
     }
@@ -68,7 +68,7 @@ export function makeTernaryTreeList<T>(size: number, offset: number, xs: /* var 
       let right = makeTernaryTreeList(divided.right, offset + divided.left + divided.middle, xs);
       let result: TernaryTreeList<T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
-        size: size,
+        size: listLen(left) + listLen(middle) + listLen(right),
         depth: decideParentDepth(left, middle, right),
         left: left,
         middle: middle,

@@ -139,6 +139,12 @@ export let runListTests = () => {
     check(formatListInline(concat(initTernaryTreeList<number>([]), data1)) === "(1 _ 2)");
     check(formatListInline(concat(data1, data2, data3)) === "((1 _ 2) (3 _ 4) (5 _ 6))");
     check(formatListInline(concat(data1, data2, data3, data4)) === "((1 _ 2) ((3 _ 4) _ (5 _ 6)) (7 _ 8))");
+
+    checkListStructure(concat(data1, data2));
+    checkListStructure(concat(data1, data2, data3));
+    checkListStructure(concat(data1, data2, data3, data4));
+
+    check(listLen(concat(data1, data2, data3, data4)) === 8);
   });
 
   test("check(equality", () => {
