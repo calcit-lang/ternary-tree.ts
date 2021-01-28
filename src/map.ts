@@ -328,14 +328,36 @@ export function contains<K, T>(tree: TernaryTreeMap<K, T>, item: K, hx: Hash = n
   }
 
   // echo "looking for: ", hx, " ", item, " in ", tree.formatInline(true)
-  for (let branch of [tree.left, tree.middle, tree.right]) {
-    if (branch != null) {
-      if (branch.kind === TernaryTreeKind.ternaryTreeLeaf) {
-        if (branch.hash === hx) {
+  if (tree.left != null) {
+    if (tree.left != null) {
+      if (tree.left.kind === TernaryTreeKind.ternaryTreeLeaf) {
+        if (tree.left.hash === hx) {
           return true;
         }
-      } else if (hx >= branch.minHash && hx <= branch.maxHash) {
-        return contains(branch, item, hx); // TODO
+      } else if (hx >= tree.left.minHash && hx <= tree.left.maxHash) {
+        return contains(tree.left, item, hx); // TODO
+      }
+    }
+  }
+  if (tree.middle != null) {
+    if (tree.middle != null) {
+      if (tree.middle.kind === TernaryTreeKind.ternaryTreeLeaf) {
+        if (tree.middle.hash === hx) {
+          return true;
+        }
+      } else if (hx >= tree.middle.minHash && hx <= tree.middle.maxHash) {
+        return contains(tree.middle, item, hx); // TODO
+      }
+    }
+  }
+  if (tree.right != null) {
+    if (tree.right != null) {
+      if (tree.right.kind === TernaryTreeKind.ternaryTreeLeaf) {
+        if (tree.right.hash === hx) {
+          return true;
+        }
+      } else if (hx >= tree.right.minHash && hx <= tree.right.maxHash) {
+        return contains(tree.right, item, hx); // TODO
       }
     }
   }
@@ -360,21 +382,49 @@ export function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): T {
 
     // echo "looking for: ", hx, " ", item, " in ", tree.formatInline
 
-    for (let branch of [tree.left, tree.middle, tree.right]) {
-      if (branch != null) {
-        if (branch.kind == TernaryTreeKind.ternaryTreeLeaf) {
-          if (branch.hash === hx) {
-            for (let pair of branch.elements) {
-              if (dataEqual(pair[0], item)) {
-                return pair[1];
-              }
+    if (tree.left != null) {
+      if (tree.left.kind == TernaryTreeKind.ternaryTreeLeaf) {
+        if (tree.left.hash === hx) {
+          for (let pair of tree.left.elements) {
+            if (dataEqual(pair[0], item)) {
+              return pair[1];
             }
-            return nilResult;
           }
-        } else if (hx >= branch.minHash && hx <= branch.maxHash) {
-          tree = branch;
-          continue whileLoop; // notice, it jumps to while loop
+          return nilResult;
         }
+      } else if (hx >= tree.left.minHash && hx <= tree.left.maxHash) {
+        tree = tree.left;
+        continue whileLoop; // notice, it jumps to while loop
+      }
+    }
+    if (tree.middle != null) {
+      if (tree.middle.kind == TernaryTreeKind.ternaryTreeLeaf) {
+        if (tree.middle.hash === hx) {
+          for (let pair of tree.middle.elements) {
+            if (dataEqual(pair[0], item)) {
+              return pair[1];
+            }
+          }
+          return nilResult;
+        }
+      } else if (hx >= tree.middle.minHash && hx <= tree.middle.maxHash) {
+        tree = tree.middle;
+        continue whileLoop; // notice, it jumps to while loop
+      }
+    }
+    if (tree.right != null) {
+      if (tree.right.kind == TernaryTreeKind.ternaryTreeLeaf) {
+        if (tree.right.hash === hx) {
+          for (let pair of tree.right.elements) {
+            if (dataEqual(pair[0], item)) {
+              return pair[1];
+            }
+          }
+          return nilResult;
+        }
+      } else if (hx >= tree.right.minHash && hx <= tree.right.maxHash) {
+        tree = tree.right;
+        continue whileLoop; // notice, it jumps to while loop
       }
     }
 
@@ -926,8 +976,14 @@ function collectToPairsArray<K, T>(acc: Array<[K, T]>, tree: TernaryTreeMap<K, T
         acc.push(pair);
       }
     } else {
-      for (let branch of [tree.left, tree.middle, tree.right]) {
-        collectToPairsArray(acc, branch);
+      if (tree.left != null) {
+        collectToPairsArray(acc, tree.left);
+      }
+      if (tree.middle != null) {
+        collectToPairsArray(acc, tree.middle);
+      }
+      if (tree.right != null) {
+        collectToPairsArray(acc, tree.right);
       }
     }
   }
@@ -947,8 +1003,18 @@ export function* toPairs<K, T>(tree: TernaryTreeMap<K, T>): Generator<[K, T]> {
         yield pair;
       }
     } else {
-      for (let branch of [tree.left, tree.middle, tree.right]) {
-        for (let item of toPairs(branch)) {
+      if (tree.left != null) {
+        for (let item of toPairs(tree.left)) {
+          yield item;
+        }
+      }
+      if (tree.middle != null) {
+        for (let item of toPairs(tree.middle)) {
+          yield item;
+        }
+      }
+      if (tree.right != null) {
+        for (let item of toPairs(tree.right)) {
           yield item;
         }
       }
@@ -963,8 +1029,18 @@ export function* toKeys<K, V>(tree: TernaryTreeMap<K, V>): Generator<K> {
         yield pair[0];
       }
     } else {
-      for (let branch of [tree.left, tree.middle, tree.right]) {
-        for (let item of toKeys(branch)) {
+      if (tree.left != null) {
+        for (let item of toKeys(tree.left)) {
+          yield item;
+        }
+      }
+      if (tree.middle != null) {
+        for (let item of toKeys(tree.middle)) {
+          yield item;
+        }
+      }
+      if (tree.right != null) {
+        for (let item of toKeys(tree.right)) {
           yield item;
         }
       }
@@ -979,8 +1055,18 @@ export function* toValues<K, V>(tree: TernaryTreeMap<K, V>): Generator<V> {
         yield pair[1];
       }
     } else {
-      for (let branch of [tree.left, tree.middle, tree.right]) {
-        for (let item of toValues(branch)) {
+      if (tree.left != null) {
+        for (let item of toValues(tree.left)) {
+          yield item;
+        }
+      }
+      if (tree.middle != null) {
+        for (let item of toValues(tree.middle)) {
+          yield item;
+        }
+      }
+      if (tree.right != null) {
+        for (let item of toValues(tree.right)) {
           yield item;
         }
       }
