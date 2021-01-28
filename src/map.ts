@@ -329,36 +329,30 @@ export function contains<K, T>(tree: TernaryTreeMap<K, T>, item: K, hx: Hash = n
 
   // echo "looking for: ", hx, " ", item, " in ", tree.formatInline(true)
   if (tree.left != null) {
-    if (tree.left != null) {
-      if (tree.left.kind === TernaryTreeKind.ternaryTreeLeaf) {
-        if (tree.left.hash === hx) {
-          return true;
-        }
-      } else if (hx >= tree.left.minHash && hx <= tree.left.maxHash) {
-        return contains(tree.left, item, hx); // TODO
+    if (tree.left.kind === TernaryTreeKind.ternaryTreeLeaf) {
+      if (tree.left.hash === hx) {
+        return contains(tree.left, item, hx);
       }
+    } else if (hx >= tree.left.minHash && hx <= tree.left.maxHash) {
+      return contains(tree.left, item, hx);
     }
   }
   if (tree.middle != null) {
-    if (tree.middle != null) {
-      if (tree.middle.kind === TernaryTreeKind.ternaryTreeLeaf) {
-        if (tree.middle.hash === hx) {
-          return true;
-        }
-      } else if (hx >= tree.middle.minHash && hx <= tree.middle.maxHash) {
-        return contains(tree.middle, item, hx); // TODO
+    if (tree.middle.kind === TernaryTreeKind.ternaryTreeLeaf) {
+      if (tree.middle.hash === hx) {
+        return contains(tree.middle, item, hx);
       }
+    } else if (hx >= tree.middle.minHash && hx <= tree.middle.maxHash) {
+      return contains(tree.middle, item, hx);
     }
   }
   if (tree.right != null) {
-    if (tree.right != null) {
-      if (tree.right.kind === TernaryTreeKind.ternaryTreeLeaf) {
-        if (tree.right.hash === hx) {
-          return true;
-        }
-      } else if (hx >= tree.right.minHash && hx <= tree.right.maxHash) {
-        return contains(tree.right, item, hx); // TODO
+    if (tree.right.kind === TernaryTreeKind.ternaryTreeLeaf) {
+      if (tree.right.hash === hx) {
+        return contains(tree.right, item, hx);
       }
+    } else if (hx >= tree.right.minHash && hx <= tree.right.maxHash) {
+      return contains(tree.right, item, hx);
     }
   }
 
