@@ -1191,3 +1191,36 @@ export function sameMapShape<K, T>(xs: TernaryTreeMap<K, T>, ys: TernaryTreeMap<
     throw new Error("Unknown");
   }
 }
+
+export function mapMapValues<K, T, V>(tree: TernaryTreeMap<K, T>, f: (x: T) => V): TernaryTreeMap<K, V> {
+  if (tree == null) {
+    return tree;
+  }
+
+  switch (tree.kind) {
+    case TernaryTreeKind.ternaryTreeLeaf: {
+      let newElements = new Array<[K, V]>(tree.elements.length);
+      for (let idx in tree.elements) {
+        newElements[idx] = [tree.elements[idx][0], f(tree.elements[idx][1])];
+      }
+      let result: TernaryTreeMap<K, V> = {
+        kind: TernaryTreeKind.ternaryTreeLeaf,
+        hash: tree.hash,
+        elements: newElements,
+      };
+      return result;
+    }
+    case TernaryTreeKind.ternaryTreeBranch: {
+      let result: TernaryTreeMap<K, V> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        depth: tree.depth,
+        minHash: tree.minHash,
+        maxHash: tree.maxHash,
+        left: mapMapValues(tree.left, f),
+        middle: mapMapValues(tree.middle, f),
+        right: mapMapValues(tree.right, f),
+      };
+      return result;
+    }
+  }
+}

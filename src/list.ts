@@ -1059,3 +1059,31 @@ export function reverse<T>(tree: TernaryTreeList<T>): TernaryTreeList<T> {
     }
   }
 }
+
+export function listMapValues<T, V>(tree: TernaryTreeList<T>, f: (x: T) => V): TernaryTreeList<V> {
+  if (tree == null) {
+    return tree;
+  }
+
+  switch (tree.kind) {
+    case TernaryTreeKind.ternaryTreeLeaf: {
+      let result: TernaryTreeList<V> = {
+        kind: TernaryTreeKind.ternaryTreeLeaf,
+        size: tree.size,
+        value: f(tree.value),
+      };
+      return result;
+    }
+    case TernaryTreeKind.ternaryTreeBranch: {
+      let result: TernaryTreeList<V> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        size: tree.size,
+        depth: tree.depth,
+        left: tree.left == null ? emptyBranch : listMapValues(tree.left, f),
+        middle: tree.middle == null ? emptyBranch : listMapValues(tree.middle, f),
+        right: tree.right == null ? emptyBranch : listMapValues(tree.right, f),
+      };
+      return result;
+    }
+  }
+}

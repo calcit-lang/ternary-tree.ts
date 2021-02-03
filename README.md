@@ -9,33 +9,34 @@
 Map functions:
 
 ```ts
-export function initTernaryTreeMapFromHashEntries<K, T>(xs: Array<TernaryTreeMapHashEntry<K, T>>): TernaryTreeMap<K, T>;
-export function initTernaryTreeMap<K, T>(t: Map<K, T>): TernaryTreeMap<K, T>;
-export function initEmptyTernaryTreeMap<K, T>(): TernaryTreeMap<K, T>;
+function initTernaryTreeMapFromHashEntries<K, T>(xs: Array<TernaryTreeMapHashEntry<K, T>>): TernaryTreeMap<K, T>;
+function initTernaryTreeMap<K, T>(t: Map<K, T>): TernaryTreeMap<K, T>;
+function initEmptyTernaryTreeMap<K, T>(): TernaryTreeMap<K, T>;
 
-export function mapLen<K, V>(tree: TernaryTreeMap<K, V>): number;
-export function isMapEmpty<K, V>(tree: TernaryTreeMap<K, V>): boolean;
-export function contains<K, T>(tree: TernaryTreeMap<K, T>, item: K, hx: Hash = null as any): boolean;
-export function mapEqual<K, V>(xs: TernaryTreeMap<K, V>, ys: TernaryTreeMap<K, V>): boolean;
-export function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): T;
+function mapLen<K, V>(tree: TernaryTreeMap<K, V>): number;
+function isMapEmpty<K, V>(tree: TernaryTreeMap<K, V>): boolean;
+function contains<K, T>(tree: TernaryTreeMap<K, T>, item: K, hx: Hash = null as any): boolean;
+function mapEqual<K, V>(xs: TernaryTreeMap<K, V>, ys: TernaryTreeMap<K, V>): boolean;
+function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): T;
 
-export function* toPairs<K, T>(tree: TernaryTreeMap<K, T>): Generator<[K, T]>;
-export function* toKeys<K, V>(tree: TernaryTreeMap<K, V>): Generator<K>;
-export function* toValues<K, V>(tree: TernaryTreeMap<K, V>): Generator<V>;
-export function toPairsArray<K, T>(tree: TernaryTreeMap<K, T>): Array<[K, T]>;
+function* toPairs<K, T>(tree: TernaryTreeMap<K, T>): Generator<[K, T]>;
+function* toKeys<K, V>(tree: TernaryTreeMap<K, V>): Generator<K>;
+function* toValues<K, V>(tree: TernaryTreeMap<K, V>): Generator<V>;
+function toPairsArray<K, T>(tree: TernaryTreeMap<K, T>): Array<[K, T]>;
 
-export function assocMap<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, disableBalancing: boolean = false): TernaryTreeMap<K, T>;
-export function dissocMap<K, T>(tree: TernaryTreeMap<K, T>, key: K): TernaryTreeMap<K, T>;
-export function merge<K, T>(xs: TernaryTreeMap<K, T>, ys: TernaryTreeMap<K, T>): TernaryTreeMap<K, T>;
-export function mergeSkip<K, T>(xs: TernaryTreeMap<K, T>, ys: TernaryTreeMap<K, T>, skipped: T): TernaryTreeMap<K, T>;
+function assocMap<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, disableBalancing: boolean = false): TernaryTreeMap<K, T>;
+function dissocMap<K, T>(tree: TernaryTreeMap<K, T>, key: K): TernaryTreeMap<K, T>;
+function merge<K, T>(xs: TernaryTreeMap<K, T>, ys: TernaryTreeMap<K, T>): TernaryTreeMap<K, T>;
+function mergeSkip<K, T>(xs: TernaryTreeMap<K, T>, ys: TernaryTreeMap<K, T>, skipped: T): TernaryTreeMap<K, T>;
+function mapMapValues<K, T, V>(tree: TernaryTreeMap<K, T>, f: (x: T) => V): TernaryTreeMap<K, V>;
 
-export function toHashSortedPairs<K, T>(tree: TernaryTreeMap<K, T>): Array<[K, T]>;
-export function mapToString<K, V>(tree: TernaryTreeMap<K, V>): string;
-export function formatMapInline<K, V>(tree: TernaryTreeMap<K, V>, withHash: boolean = false): string;
-export function checkMapStructure<K, V>(tree: TernaryTreeMap<K, V>): boolean;
-export function getMapDepth<K, V>(tree: TernaryTreeMap<K, V>): number;
-export function forceMapInplaceBalancing<K, T>(tree: TernaryTreeMap<K, T>): void;
-export function sameMapShape<K, T>(xs: TernaryTreeMap<K, T>, ys: TernaryTreeMap<K, T>): boolean;
+function toHashSortedPairs<K, T>(tree: TernaryTreeMap<K, T>): Array<[K, T]>;
+function mapToString<K, V>(tree: TernaryTreeMap<K, V>): string;
+function formatMapInline<K, V>(tree: TernaryTreeMap<K, V>, withHash: boolean = false): string;
+function checkMapStructure<K, V>(tree: TernaryTreeMap<K, V>): boolean;
+function getMapDepth<K, V>(tree: TernaryTreeMap<K, V>): number;
+function forceMapInplaceBalancing<K, T>(tree: TernaryTreeMap<K, T>): void;
+function sameMapShape<K, T>(xs: TernaryTreeMap<K, T>, ys: TernaryTreeMap<K, T>): boolean;
 ```
 
 List functions:
@@ -69,6 +70,7 @@ function prepend<T>(tree: TernaryTreeList<T>, item: T, disableBalancing: boolean
 function append<T>(tree: TernaryTreeList<T>, item: T, disableBalancing: boolean = false): TernaryTreeList<T>;
 function concat<T>(xs: TernaryTreeList<T>, ys: TernaryTreeList<T>): TernaryTreeList<T>;
 function reverse<T>(tree: TernaryTreeList<T>): TernaryTreeList<T>;
+function listMapValues<T, V>(tree: TernaryTreeList<T>, f: (x: T) => V): TernaryTreeList<V>;
 
 function sameListShape<T>(xs: TernaryTreeList<T>, ys: TernaryTreeList<T>): boolean;
 function getDepth<T>(tree: TernaryTreeList<T>): number;

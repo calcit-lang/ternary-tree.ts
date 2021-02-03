@@ -28,6 +28,7 @@ import {
   forceListInplaceBalancing,
   listEqual,
   indexToItems,
+  listMapValues,
 } from "./list";
 
 import { test, check, arrayEqual } from "./utils";
@@ -249,5 +250,15 @@ export let runListTests = () => {
     check(findIndex(data, (x: number): boolean => x === 2) === 1);
     check(indexOf(data, 9) === -1);
     check(findIndex(data, (x: number): boolean => x === 9) === -1);
+  });
+
+  test("map values", () => {
+    let data = initTernaryTreeList<number>([1, 2, 3, 4]);
+    let data2 = initTernaryTreeList<number>([1, 4, 9, 16]);
+    let data3 = listMapValues(data, (x) => x * x);
+
+    checkListStructure(data3);
+    check(listEqual(data2, data3));
+    check(formatListInline(data2) == formatListInline(data3));
   });
 };
