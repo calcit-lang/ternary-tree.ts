@@ -20,6 +20,7 @@ import {
   mapEqual,
   toKeys,
   toPairsArray,
+  mapMapValues,
 } from "./map";
 
 export let runMapTests = () => {
@@ -225,5 +226,25 @@ export let runMapTests = () => {
       i = i + 1;
     }
     check(i == 100);
+  });
+
+  test("map values", () => {
+    var dict: Map<string, number> = new Map();
+    for (let idx = 0; idx < 4; idx++) {
+      dict.set(`${idx}`, idx + 10);
+    }
+    let data = initTernaryTreeMap(dict);
+
+    var dict2: Map<string, number> = new Map();
+    for (let idx = 0; idx < 4; idx++) {
+      dict2.set(`${idx}`, idx + 20);
+    }
+    let data2 = initTernaryTreeMap(dict2);
+
+    let data3 = mapMapValues(data, (x) => x + 10);
+
+    checkMapStructure(data3);
+    check(mapEqual(data2, data3));
+    check(formatMapInline(data2) === formatMapInline(data3));
   });
 };
