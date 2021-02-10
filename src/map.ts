@@ -371,7 +371,7 @@ export function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): T {
           return pair[1];
         }
       }
-      return nilResult;
+      throw new Error(`Cannot find target for ${item}`);
     }
 
     // echo "looking for: ", hx, " ", item, " in ", tree.formatInline
@@ -384,7 +384,7 @@ export function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): T {
               return pair[1];
             }
           }
-          return nilResult;
+          throw new Error(`Cannot find target for ${item}`);
         }
       } else if (hx >= tree.left.minHash && hx <= tree.left.maxHash) {
         tree = tree.left;
@@ -399,7 +399,7 @@ export function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): T {
               return pair[1];
             }
           }
-          return nilResult;
+          throw new Error(`Cannot find target for ${item}`);
         }
       } else if (hx >= tree.middle.minHash && hx <= tree.middle.maxHash) {
         tree = tree.middle;
@@ -414,7 +414,7 @@ export function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): T {
               return pair[1];
             }
           }
-          return nilResult;
+          throw new Error(`Cannot find target for ${item}`);
         }
       } else if (hx >= tree.right.minHash && hx <= tree.right.maxHash) {
         tree = tree.right;
@@ -422,10 +422,10 @@ export function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): T {
       }
     }
 
-    return nilResult;
+    throw new Error(`Cannot find target for ${item}`);
   }
 
-  return nilResult;
+  throw new Error(`Cannot find target for ${item}`);
 }
 
 // leaves on the left has smaller hashes
