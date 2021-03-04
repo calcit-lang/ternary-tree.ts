@@ -21,6 +21,7 @@ import {
   toKeys,
   toPairsArray,
   mapMapValues,
+  mapGetDefault,
 } from "./map";
 
 export let runMapTests = () => {
@@ -50,6 +51,7 @@ export let runMapTests = () => {
     check(contains(data10, "11") == false);
 
     check(deepEqual(mapGet(data10, "1"), 11));
+    check(deepEqual(mapGetDefault(data10, "111", 0), 0));
     // check(deepEqual(mapGet(data10, "11"), null)); // should throws error
 
     let emptyData: Map<string, number> = new Map();
