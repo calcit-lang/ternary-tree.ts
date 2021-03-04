@@ -148,7 +148,7 @@ export function initTernaryTreeMapFromHashEntries<K, T>(xs: Array<TernaryTreeMap
   return makeTernaryTreeMap(xs.length, 0, xs);
 }
 
-export function initTernaryTreeMap<K, T>(t: Map<K, T>): TernaryTreeMap<K, T> {
+export function initTernaryTreeMap<K, T>(t: Map<K, T> | Array<[K, T]>): TernaryTreeMap<K, T> {
   let groupBuffers: Map<number, Array<[K, T]>> = new Map();
   for (let [k, v] of t) {
     let h = hashGenerator(k);
@@ -164,14 +164,20 @@ export function initTernaryTreeMap<K, T>(t: Map<K, T>): TernaryTreeMap<K, T> {
     }
   }
 
-  let xs: Array<TernaryTreeMapHashEntry<K, T>> = [...groupBuffers.keys()].sort(cmp).map((h) => {
-    let pairs = groupBuffers.get(h);
-    if (pairs != null) {
-      return { hash: h, pairs: pairs };
+  let xs: Array<TernaryTreeMapHashEntry<K, T>> = [];
+  for (let [k, v] of groupBuffers) {
+    if (v != null) {
+      xs.push({
+        hash: k,
+        pairs: v,
+      });
     } else {
       throw new Error("Expected reference to paris");
     }
-  });
+  }
+
+  // MUTABLE in-place sort
+  xs.sort((a, b) => cmp(a.hash, b.hash));
 
   let result = initTernaryTreeMapFromHashEntries(xs);
   // checkMapStructure(result);

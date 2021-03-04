@@ -41,11 +41,13 @@ export let runMapTests = () => {
     });
 
     let data10 = initTernaryTreeMap<string, number>(dict);
+    let data11 = initTernaryTreeMap<string, number>(inList);
 
     // echo data10
     justDisplay(formatMapInline(data10), "((2:12 3:13 7:17) ((_ 9:19 _) (6:16 _ 5:15) (_ 1:11 _)) (8:18 0:10 4:14))");
 
     check(deepEqual(toHashSortedPairs(data10), inList));
+    check(deepEqual(toHashSortedPairs(data11), inList));
 
     check(contains(data10, "1") == true);
     check(contains(data10, "11") == false);
