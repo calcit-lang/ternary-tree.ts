@@ -307,53 +307,64 @@ function toOrderedHashEntries<K, T>(tree: TernaryTreeMap<K, T>): Array<TernaryTr
   return acc;
 }
 
-export function contains<K, T>(tree: TernaryTreeMap<K, T>, item: K, hx: Hash = null as any): boolean {
-  if (tree == null) {
+export function contains<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): boolean {
+  if (originalTree == null) {
     return false;
   }
 
   // reduce redundant computation by reusing hash result
-  hx = hx ?? hashGenerator(item);
+  let hx = hashGenerator(item);
 
-  if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
-    if (hx === tree.hash) {
-      for (let idx in tree.elements) {
-        let pair = tree.elements[idx];
-        if (dataEqual(pair[0], item)) {
-          return true;
+  let tree = originalTree;
+
+  whileLoop: while (tree != null) {
+    if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
+      if (hx === tree.hash) {
+        for (let idx in tree.elements) {
+          let pair = tree.elements[idx];
+          if (dataEqual(pair[0], item)) {
+            return true;
+          }
         }
+      }
+      return false;
+    }
+
+    // echo "looking for: ", hx, " ", item, " in ", tree.formatInline(true)
+    if (tree.left != null) {
+      if (tree.left.kind === TernaryTreeKind.ternaryTreeLeaf) {
+        if (tree.left.hash === hx) {
+          tree = tree.left;
+          continue whileLoop; // notice, it jumps to while loop
+        }
+      } else if (hx >= tree.left.minHash && hx <= tree.left.maxHash) {
+        tree = tree.left;
+        continue whileLoop; // notice, it jumps to while loop
+      }
+    }
+    if (tree.middle != null) {
+      if (tree.middle.kind === TernaryTreeKind.ternaryTreeLeaf) {
+        if (tree.middle.hash === hx) {
+          tree = tree.middle;
+          continue whileLoop; // notice, it jumps to while loop
+        }
+      } else if (hx >= tree.middle.minHash && hx <= tree.middle.maxHash) {
+        tree = tree.middle;
+        continue whileLoop; // notice, it jumps to while loop
+      }
+    }
+    if (tree.right != null) {
+      if (tree.right.kind === TernaryTreeKind.ternaryTreeLeaf) {
+        if (tree.right.hash === hx) {
+          tree = tree.right;
+          continue whileLoop; // notice, it jumps to while loop
+        }
+      } else if (hx >= tree.right.minHash && hx <= tree.right.maxHash) {
+        tree = tree.right;
+        continue whileLoop; // notice, it jumps to while loop
       }
     }
     return false;
-  }
-
-  // echo "looking for: ", hx, " ", item, " in ", tree.formatInline(true)
-  if (tree.left != null) {
-    if (tree.left.kind === TernaryTreeKind.ternaryTreeLeaf) {
-      if (tree.left.hash === hx) {
-        return contains(tree.left, item, hx);
-      }
-    } else if (hx >= tree.left.minHash && hx <= tree.left.maxHash) {
-      return contains(tree.left, item, hx);
-    }
-  }
-  if (tree.middle != null) {
-    if (tree.middle.kind === TernaryTreeKind.ternaryTreeLeaf) {
-      if (tree.middle.hash === hx) {
-        return contains(tree.middle, item, hx);
-      }
-    } else if (hx >= tree.middle.minHash && hx <= tree.middle.maxHash) {
-      return contains(tree.middle, item, hx);
-    }
-  }
-  if (tree.right != null) {
-    if (tree.right.kind === TernaryTreeKind.ternaryTreeLeaf) {
-      if (tree.right.hash === hx) {
-        return contains(tree.right, item, hx);
-      }
-    } else if (hx >= tree.right.minHash && hx <= tree.right.maxHash) {
-      return contains(tree.right, item, hx);
-    }
   }
 
   return false;
@@ -379,12 +390,8 @@ export function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): T {
     if (tree.left != null) {
       if (tree.left.kind == TernaryTreeKind.ternaryTreeLeaf) {
         if (tree.left.hash === hx) {
-          for (let pair of tree.left.elements) {
-            if (dataEqual(pair[0], item)) {
-              return pair[1];
-            }
-          }
-          throw new Error(`Cannot find target for ${item}`);
+          tree = tree.left;
+          continue whileLoop; // notice, it jumps to while loop
         }
       } else if (hx >= tree.left.minHash && hx <= tree.left.maxHash) {
         tree = tree.left;
@@ -394,12 +401,8 @@ export function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): T {
     if (tree.middle != null) {
       if (tree.middle.kind == TernaryTreeKind.ternaryTreeLeaf) {
         if (tree.middle.hash === hx) {
-          for (let pair of tree.middle.elements) {
-            if (dataEqual(pair[0], item)) {
-              return pair[1];
-            }
-          }
-          throw new Error(`Cannot find target for ${item}`);
+          tree = tree.middle;
+          continue whileLoop; // notice, it jumps to while loop
         }
       } else if (hx >= tree.middle.minHash && hx <= tree.middle.maxHash) {
         tree = tree.middle;
@@ -409,12 +412,8 @@ export function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): T {
     if (tree.right != null) {
       if (tree.right.kind == TernaryTreeKind.ternaryTreeLeaf) {
         if (tree.right.hash === hx) {
-          for (let pair of tree.right.elements) {
-            if (dataEqual(pair[0], item)) {
-              return pair[1];
-            }
-          }
-          throw new Error(`Cannot find target for ${item}`);
+          tree = tree.right;
+          continue whileLoop; // notice, it jumps to while loop
         }
       } else if (hx >= tree.right.minHash && hx <= tree.right.maxHash) {
         tree = tree.right;
