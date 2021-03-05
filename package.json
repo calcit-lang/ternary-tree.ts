@@ -1,6 +1,6 @@
 {
   "name": "@calcit/ternary-tree",
-  "version": "0.0.9",
+  "version": "0.0.12",
   "main": "./lib/index.js",
   "devDependencies": {
     "prettier": "^2.2.1",
