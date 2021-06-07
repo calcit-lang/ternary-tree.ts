@@ -50,9 +50,9 @@ export let divideTernarySizes = (size: number): { left: number; middle: number; 
 };
 
 export function shallowCloneArray<T>(xs: Array<T>): Array<T> {
-  let ys: Array<T> = [];
-  for (let item of xs) {
-    ys.push(item);
+  let ys: Array<T> = new Array(xs.length);
+  for (let i = 0; i < xs.length; i++) {
+    ys[i] = xs[i];
   }
   return ys;
 }
@@ -105,7 +105,7 @@ export let arrayEqual = <T>(xs: Array<T>, ys: Array<T>): boolean => {
   if (xs.length != ys.length) {
     return false;
   }
-  for (let idx in xs) {
+  for (let idx = 0; idx < xs.length; idx++) {
     if (xs[idx] !== ys[idx]) {
       return false;
     }

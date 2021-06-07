@@ -17,7 +17,8 @@ let emptyBranch: TernaryTreeList<any> = null as any;
 
 function decideParentDepth<T>(...xs: Array<TernaryTreeList<T>>): number {
   let depth = 0;
-  for (let x of xs) {
+  for (let i = 0; i < xs.length; i++) {
+    let x = xs[i];
     let y = getDepth(x);
     if (y > depth) {
       depth = y;
@@ -81,7 +82,8 @@ export function makeTernaryTreeList<T>(size: number, offset: number, xs: /* var 
 
 export function initTernaryTreeList<T>(xs: Array<T>): TernaryTreeList<T> {
   let ys = new Array<TernaryTreeList<T>>(xs.length);
-  for (let idx in xs) {
+  let size = xs.length;
+  for (let idx = 0; idx < size; idx++) {
     let x = xs[idx];
     ys[idx] = { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: x };
   }
