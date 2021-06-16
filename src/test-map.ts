@@ -72,6 +72,14 @@ export let runMapTests = () => {
       let data2 = assocMap(data, `${idx * 2 + 1}`, idx);
       check(contains(data2, `${idx * 2 + 1}`));
     }
+
+    var dict: Map<string, number> = new Map();
+    data = initTernaryTreeMap(dict);
+    for (let idx = 0; idx < 1000; idx++) {
+      let p = 100 - idx / 10;
+      data = assocMap(data, `${p}`, idx);
+      check(contains(data, `${p}`));
+    }
   });
 
   test("check structure", () => {
