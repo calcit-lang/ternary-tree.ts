@@ -83,15 +83,7 @@ function makeTernaryTreeMap<K, T>(size: number, offset: number, xs: /* var */ Ar
     }
     case 1: {
       let leftPair = xs[offset];
-      let result: TernaryTreeMap<K, T> = {
-        kind: TernaryTreeKind.ternaryTreeBranch,
-        maxHash: leftPair.hash,
-        minHash: leftPair.hash,
-        left: createLeafFromHashEntry(leftPair),
-        right: emptyBranch,
-        middle: emptyBranch,
-        depth: 1,
-      };
+      let result: TernaryTreeMap<K, T> = createLeafFromHashEntry(leftPair);
       return result;
     }
     case 2: {
@@ -979,6 +971,9 @@ function dissocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K): TernaryTreeMap
     }
 
     if (isMapEmpty(changedBranch)) {
+      if (isMapEmpty(tree.right)) {
+        return tree.middle;
+      }
       let result: TernaryTreeMapTheBranch<K, T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
         maxHash: tree.maxHash,
@@ -1007,6 +1002,9 @@ function dissocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K): TernaryTreeMap
     let changedBranch = dissocExisted(tree.middle, key);
 
     if (isMapEmpty(changedBranch)) {
+      if (isMapEmpty(tree.right)) {
+        return tree.left;
+      }
       let result: TernaryTreeMapTheBranch<K, T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
         maxHash: getMax(tree),
