@@ -61,6 +61,19 @@ export let runMapTests = () => {
     check(mapEqual(initEmptyTernaryTreeMap<string, number>(), initTernaryTreeMap(emptyData)));
   });
 
+  test("assoc and contains", () => {
+    var dict: Map<string, number> = new Map();
+    for (let idx = 0; idx < 100; idx++) {
+      dict.set(`${idx * 2}`, idx);
+    }
+    let data = initTernaryTreeMap(dict);
+    for (let idx = 0; idx < 100; idx++) {
+      dict.set(`${idx * 2 + 1}`, idx);
+      let data2 = assocMap(data, `${idx * 2 + 1}`, idx);
+      check(contains(data2, `${idx * 2 + 1}`));
+    }
+  });
+
   test("check structure", () => {
     var dict: Map<string, number> = new Map();
     for (let idx = 0; idx < 100; idx++) {

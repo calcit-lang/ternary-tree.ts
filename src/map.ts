@@ -70,15 +70,7 @@ function createLeafFromHashEntry<K, T>(item: TernaryTreeMapHashEntry<K, T>): Ter
 function makeTernaryTreeMap<K, T>(size: number, offset: number, xs: /* var */ Array<TernaryTreeMapHashEntry<K, T>>): TernaryTreeMap<K, T> {
   switch (size) {
     case 0: {
-      let result: TernaryTreeMapTheBranch<K, T> = {
-        kind: TernaryTreeKind.ternaryTreeBranch,
-        maxHash: 0,
-        minHash: 0,
-        left: emptyBranch,
-        middle: emptyBranch,
-        right: emptyBranch,
-        depth: 0,
-      };
+      let result: TernaryTreeMap<K, T> = emptyBranch;
       return result;
     }
     case 1: {
@@ -178,15 +170,7 @@ export function initTernaryTreeMap<K, T>(t: Map<K, T> | Array<[K, T]>): TernaryT
 
 // for empty map
 export function initEmptyTernaryTreeMap<K, T>(): TernaryTreeMap<K, T> {
-  let result: TernaryTreeMapTheBranch<K, T> = {
-    kind: TernaryTreeKind.ternaryTreeBranch,
-    maxHash: 0,
-    minHash: 0,
-    left: emptyBranch,
-    middle: emptyBranch,
-    right: emptyBranch,
-    depth: 0,
-  };
+  let result: TernaryTreeMap<K, T> = emptyBranch;
   return result;
 }
 
@@ -718,9 +702,9 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
           kind: TernaryTreeKind.ternaryTreeBranch,
           maxHash: thisHash,
           minHash: tree.hash,
-          left: emptyBranch,
-          middle: tree,
-          right: childBranch,
+          left: tree,
+          middle: childBranch,
+          right: emptyBranch,
           depth: 0, // TODO
         };
         return result;
