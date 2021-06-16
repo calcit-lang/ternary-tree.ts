@@ -67,6 +67,16 @@ export let check = (x: boolean): void => {
     throw new Error("Test failed");
   }
 };
+
+/** compare by reference */
+export let checkEqual = (x: any, y: any): void => {
+  if (x !== y) {
+    console.log("Left:  ", x);
+    console.log("Right: ", y);
+    throw new Error("Test failed");
+  }
+};
+
 export let justDisplay = (x: any, y: any): void => {
   console.group("Compare:");
   console.log(x);
