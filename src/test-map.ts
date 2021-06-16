@@ -45,7 +45,7 @@ export let runMapTests = () => {
     checkMapStructure(data11);
 
     // echo data10
-    justDisplay(formatMapInline(data10), "((2:12 3:13 7:17) ((_ 9:19 _) (6:16 _ 5:15) (_ 1:11 _)) (8:18 0:10 4:14))");
+    justDisplay(formatMapInline(data10, true), " ((0:10 1:11 2:12) (3:13 (4:14 5:15 _) 6:16) (7:17 8:18 9:19))");
 
     check(deepEqual(toHashSortedPairs(data10), inList));
     check(deepEqual(toHashSortedPairs(data11), inList));
@@ -86,8 +86,8 @@ export let runMapTests = () => {
     check(contains(data, "12") == false);
     checkMapStructure(data);
 
-    justDisplay(formatMapInline(assocMap(data, "1", 2222), false), "((2:12 3:13 7:17) ((_ 9:19 _) (6:16 _ 5:15) (_ 1:2222 _)) (8:18 0:10 4:14))");
-    justDisplay(formatMapInline(assocMap(data, "23", 2222), false), "((2:12 3:13 7:17) ((_ 9:19 _) (6:16 _ 5:15) (23:2222 1:11 _)) (8:18 0:10 4:14))");
+    justDisplay(formatMapInline(assocMap(data, "1", 2222), true), "((0:10 1:2222 2:12) (3:13 (4:14 5:15 _) 6:16) (7:17 8:18 9:19))");
+    justDisplay(formatMapInline(assocMap(data, "23", 2222), true), "(((0:10 1:11 2:12) (3:13 (4:14 5:15 _) 6:16) (7:17 8:18 9:19)) 23:2222 _)");
   });
 
   test("dissoc", () => {
