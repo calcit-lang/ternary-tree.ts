@@ -10,7 +10,6 @@ import {
   assocMap,
   dissocMap,
   contains,
-  mapGet,
   toPairs,
   initEmptyTernaryTreeMap,
   sameMapShape,
@@ -54,9 +53,9 @@ export let runMapTests = () => {
     check(contains(data10, "1") == true);
     check(contains(data10, "11") == false);
 
-    check(deepEqual(mapGet(data10, "1"), 11));
+    check(deepEqual(mapGetDefault(data10, "1", null), 11));
     check(deepEqual(mapGetDefault(data10, "111", 0), 0));
-    // check(deepEqual(mapGet(data10, "11"), null)); // should throws error
+    // check(deepEqual(mapGetDefault(data10, "11", {} as any), null)); // should throws error
 
     let emptyData: Map<string, number> = new Map();
     check(mapEqual(initEmptyTernaryTreeMap<string, number>(), initTernaryTreeMap(emptyData)));
@@ -196,10 +195,10 @@ export let runMapTests = () => {
     checkMapStructure(b);
 
     let c = mergeSkip(a, b, 11);
-    check(deepEqual(mapGet(c, "0"), 10));
-    check(deepEqual(mapGet(c, "1"), 12));
-    check(deepEqual(mapGet(c, "2"), 13));
-    check(deepEqual(mapGet(c, "3"), 14));
+    check(deepEqual(mapGetDefault(c, "0", null), 10));
+    check(deepEqual(mapGetDefault(c, "1", null), 12));
+    check(deepEqual(mapGetDefault(c, "2", null), 13));
+    check(deepEqual(mapGetDefault(c, "3", null), 14));
   });
 
   test("iterator", () => {
