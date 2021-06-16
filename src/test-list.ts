@@ -195,7 +195,7 @@ export let runListTests = () => {
     check(i === 6);
   });
 
-  test("check(structure)", () => {
+  test("check structure", () => {
     var data = initTernaryTreeList<number>([]);
     for (let idx = 0; idx < 20; idx++) {
       data = append(data, idx, true);
