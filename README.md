@@ -17,7 +17,6 @@ function mapLen<K, V>(tree: TernaryTreeMap<K, V>): number;
 function isMapEmpty<K, V>(tree: TernaryTreeMap<K, V>): boolean;
 function contains<K, T>(tree: TernaryTreeMap<K, T>, item: K, hx: Hash = null as any): boolean;
 function mapEqual<K, V>(xs: TernaryTreeMap<K, V>, ys: TernaryTreeMap<K, V>): boolean;
-function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): T;
 
 function* toPairs<K, T>(tree: TernaryTreeMap<K, T>): Generator<[K, T]>;
 function* toKeys<K, V>(tree: TernaryTreeMap<K, V>): Generator<K>;

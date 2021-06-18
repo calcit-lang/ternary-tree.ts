@@ -10,7 +10,6 @@ import {
   assocMap,
   dissocMap,
   contains,
-  mapGet,
   toPairs,
   initEmptyTernaryTreeMap,
   sameMapShape,
@@ -42,9 +41,11 @@ export let runMapTests = () => {
 
     let data10 = initTernaryTreeMap<string, number>(dict);
     let data11 = initTernaryTreeMap<string, number>(inList);
+    checkMapStructure(data10);
+    checkMapStructure(data11);
 
     // echo data10
-    justDisplay(formatMapInline(data10), "((2:12 3:13 7:17) ((_ 9:19 _) (6:16 _ 5:15) (_ 1:11 _)) (8:18 0:10 4:14))");
+    justDisplay(formatMapInline(data10, true), " ((0:10 1:11 2:12) (3:13 (4:14 5:15 _) 6:16) (7:17 8:18 9:19))");
 
     check(deepEqual(toHashSortedPairs(data10), inList));
     check(deepEqual(toHashSortedPairs(data11), inList));
@@ -52,15 +53,36 @@ export let runMapTests = () => {
     check(contains(data10, "1") == true);
     check(contains(data10, "11") == false);
 
-    check(deepEqual(mapGet(data10, "1"), 11));
+    check(deepEqual(mapGetDefault(data10, "1", null), 11));
     check(deepEqual(mapGetDefault(data10, "111", 0), 0));
-    // check(deepEqual(mapGet(data10, "11"), null)); // should throws error
+    // check(deepEqual(mapGetDefault(data10, "11", {} as any), null)); // should throws error
 
     let emptyData: Map<string, number> = new Map();
     check(mapEqual(initEmptyTernaryTreeMap<string, number>(), initTernaryTreeMap(emptyData)));
   });
 
-  test("check(structure", () => {
+  test("assoc and contains", () => {
+    var dict: Map<string, number> = new Map();
+    for (let idx = 0; idx < 100; idx++) {
+      dict.set(`${idx * 2}`, idx);
+    }
+    let data = initTernaryTreeMap(dict);
+    for (let idx = 0; idx < 100; idx++) {
+      dict.set(`${idx * 2 + 1}`, idx);
+      let data2 = assocMap(data, `${idx * 2 + 1}`, idx);
+      check(contains(data2, `${idx * 2 + 1}`));
+    }
+
+    var dict: Map<string, number> = new Map();
+    data = initTernaryTreeMap(dict);
+    for (let idx = 0; idx < 1000; idx++) {
+      let p = 100 - idx / 10;
+      data = assocMap(data, `${p}`, idx);
+      check(contains(data, `${p}`));
+    }
+  });
+
+  test("check structure", () => {
     var dict: Map<string, number> = new Map();
     for (let idx = 0; idx < 100; idx++) {
       dict.set(`${idx}`, idx + 10);
@@ -83,9 +105,10 @@ export let runMapTests = () => {
 
     check(contains(data, "1") == true);
     check(contains(data, "12") == false);
+    checkMapStructure(data);
 
-    justDisplay(formatMapInline(assocMap(data, "1", 2222), false), "((2:12 3:13 7:17) ((_ 9:19 _) (6:16 _ 5:15) (_ 1:2222 _)) (8:18 0:10 4:14))");
-    justDisplay(formatMapInline(assocMap(data, "23", 2222), false), "((2:12 3:13 7:17) ((_ 9:19 _) (6:16 _ 5:15) (23:2222 1:11 _)) (8:18 0:10 4:14))");
+    justDisplay(formatMapInline(assocMap(data, "1", 2222), true), "((0:10 1:2222 2:12) (3:13 (4:14 5:15 _) 6:16) (7:17 8:18 9:19))");
+    justDisplay(formatMapInline(assocMap(data, "23", 2222), true), "(((0:10 1:11 2:12) (3:13 (4:14 5:15 _) 6:16) (7:17 8:18 9:19)) 23:2222 _)");
   });
 
   test("dissoc", () => {
@@ -95,6 +118,7 @@ export let runMapTests = () => {
     }
 
     let data = initTernaryTreeMap(dict);
+    checkMapStructure(data);
 
     // echo data.formatInline
 
@@ -119,6 +143,7 @@ export let runMapTests = () => {
     }
 
     let data = initTernaryTreeMap(dict);
+    checkMapStructure(data);
 
     // TODO
     // justDisplay((mapToString(toPairs(data))) , "@[2:12, 3:13, 7:17, 9:19, 6:16, 5:15, 1:11, 8:18, 0:10, 4:14]")
@@ -135,6 +160,8 @@ export let runMapTests = () => {
 
     let data = initTernaryTreeMap(dict);
     let b = dissocMap(data, "3");
+    checkMapStructure(data);
+    checkMapStructure(b);
 
     check(mapEqual(data, data));
     check(!mapEqual(data, b));
@@ -158,6 +185,7 @@ export let runMapTests = () => {
     }
 
     let data = initTernaryTreeMap(dict);
+    checkMapStructure(data);
 
     var dictB: Map<string, number> = new Map();
     for (let idx = 10; idx < 14; idx++) {
@@ -178,18 +206,20 @@ export let runMapTests = () => {
       dict.set(`${idx}`, idx + 10);
     }
     let a = initTernaryTreeMap(dict);
+    checkMapStructure(a);
 
     var dict2: Map<string, number> = new Map();
     for (let idx = 0; idx < 4; idx++) {
       dict2.set(`${idx}`, idx + 11);
     }
     let b = initTernaryTreeMap(dict2);
+    checkMapStructure(b);
 
     let c = mergeSkip(a, b, 11);
-    check(deepEqual(mapGet(c, "0"), 10));
-    check(deepEqual(mapGet(c, "1"), 12));
-    check(deepEqual(mapGet(c, "2"), 13));
-    check(deepEqual(mapGet(c, "3"), 14));
+    check(deepEqual(mapGetDefault(c, "0", null), 10));
+    check(deepEqual(mapGetDefault(c, "1", null), 12));
+    check(deepEqual(mapGetDefault(c, "2", null), 13));
+    check(deepEqual(mapGetDefault(c, "3", null), 14));
   });
 
   test("iterator", () => {
@@ -201,6 +231,7 @@ export let runMapTests = () => {
     }
 
     let data = initTernaryTreeMap(dict);
+    checkMapStructure(data);
 
     var i = 0;
     for (let [k, v] of toPairs(data)) {
@@ -223,6 +254,7 @@ export let runMapTests = () => {
     }
 
     let data = initTernaryTreeMap(dict);
+    checkMapStructure(data);
 
     var i = 0;
     for (let [k, v] of toPairs(data)) {
@@ -246,6 +278,7 @@ export let runMapTests = () => {
     let data2 = initTernaryTreeMap(dict2);
 
     let data3 = mapMapValues(data, (x) => x + 10);
+    checkMapStructure(data3);
 
     checkMapStructure(data3);
     check(mapEqual(data2, data3));

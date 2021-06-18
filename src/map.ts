@@ -70,40 +70,24 @@ function createLeafFromHashEntry<K, T>(item: TernaryTreeMapHashEntry<K, T>): Ter
 function makeTernaryTreeMap<K, T>(size: number, offset: number, xs: /* var */ Array<TernaryTreeMapHashEntry<K, T>>): TernaryTreeMap<K, T> {
   switch (size) {
     case 0: {
-      let result: TernaryTreeMapTheBranch<K, T> = {
-        kind: TernaryTreeKind.ternaryTreeBranch,
-        maxHash: 0,
-        minHash: 0,
-        left: emptyBranch,
-        middle: emptyBranch,
-        right: emptyBranch,
-        depth: 0,
-      };
+      let result: TernaryTreeMap<K, T> = emptyBranch;
       return result;
     }
     case 1: {
-      let middlePair = xs[offset];
-      let result: TernaryTreeMap<K, T> = {
-        kind: TernaryTreeKind.ternaryTreeBranch,
-        maxHash: middlePair.hash,
-        minHash: middlePair.hash,
-        left: emptyBranch,
-        right: emptyBranch,
-        middle: createLeafFromHashEntry(middlePair),
-        depth: 1,
-      };
+      let leftPair = xs[offset];
+      let result: TernaryTreeMap<K, T> = createLeafFromHashEntry(leftPair);
       return result;
     }
     case 2: {
       let leftPair = xs[offset];
-      let rightPair = xs[offset + 1];
+      let middlePair = xs[offset + 1];
       let result: TernaryTreeMap<K, T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
-        maxHash: rightPair.hash,
+        maxHash: middlePair.hash,
         minHash: leftPair.hash,
-        middle: emptyBranch,
         left: createLeafFromHashEntry(leftPair),
-        right: createLeafFromHashEntry(rightPair),
+        middle: createLeafFromHashEntry(middlePair),
+        right: emptyBranch,
         depth: 1,
       };
       return result;
@@ -186,15 +170,7 @@ export function initTernaryTreeMap<K, T>(t: Map<K, T> | Array<[K, T]>): TernaryT
 
 // for empty map
 export function initEmptyTernaryTreeMap<K, T>(): TernaryTreeMap<K, T> {
-  let result: TernaryTreeMapTheBranch<K, T> = {
-    kind: TernaryTreeKind.ternaryTreeBranch,
-    maxHash: 0,
-    minHash: 0,
-    left: emptyBranch,
-    middle: emptyBranch,
-    right: emptyBranch,
-    depth: 0,
-  };
+  let result: TernaryTreeMap<K, T> = emptyBranch;
   return result;
 }
 
@@ -208,9 +184,33 @@ export function mapLen<K, V>(tree: TernaryTreeMap<K, V>): number {
   }
   switch (tree.kind) {
     case TernaryTreeKind.ternaryTreeLeaf:
-      return 1;
+      return tree.elements.length;
     case TernaryTreeKind.ternaryTreeBranch:
       return mapLen(tree.left) + mapLen(tree.middle) + mapLen(tree.right); // TODO
+    default:
+      throw new Error("Unknown");
+  }
+}
+
+// when size succeeds bound, no longer counting, faster than traversing whole tree
+export function mapLenBound<K, V>(tree: TernaryTreeMap<K, V>, bound: number): number {
+  if (tree == null) {
+    return 0;
+  }
+  switch (tree.kind) {
+    case TernaryTreeKind.ternaryTreeLeaf:
+      return tree.elements.length;
+    case TernaryTreeKind.ternaryTreeBranch:
+      let ret = mapLenBound(tree.left, bound);
+      if (ret > bound) {
+        return ret;
+      }
+      ret = ret + mapLenBound(tree.middle, bound);
+      if (ret > bound) {
+        return ret;
+      }
+      ret = ret + mapLenBound(tree.right, bound);
+      return ret;
     default:
       throw new Error("Unknown");
   }
@@ -237,6 +237,20 @@ export function formatMapInline<K, V>(tree: TernaryTreeMap<K, V>, withHash: bool
 }
 
 export function isMapEmpty<K, V>(tree: TernaryTreeMap<K, V>): boolean {
+  if (tree == null) {
+    return true;
+  }
+  switch (tree.kind) {
+    case TernaryTreeKind.ternaryTreeLeaf:
+      return false;
+    case TernaryTreeKind.ternaryTreeBranch:
+      return tree.left == null && tree.middle == null && tree.right == null;
+    default:
+      throw new Error("Unknown");
+  }
+}
+
+export function isMapOfOne<K, V>(tree: TernaryTreeMap<K, V>, counted: number = 0): boolean {
   if (tree == null) {
     return true;
   }
@@ -319,6 +333,8 @@ export function contains<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): boo
     return false;
   }
 
+  // TODO
+
   // reduce redundant computation by reusing hash result
   let hx = hashGenerator(item);
 
@@ -339,35 +355,64 @@ export function contains<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): boo
     }
 
     // echo "looking for: ", hx, " ", item, " in ", tree.formatInline(true)
-    if (tree.left != null) {
-      if (tree.left.kind === TernaryTreeKind.ternaryTreeLeaf) {
-        if (tree.left.hash === hx) {
-          tree = tree.left;
-          continue whileLoop; // notice, it jumps to while loop
-        }
-      } else if (hx >= tree.left.minHash && hx <= tree.left.maxHash) {
+    if (tree.left == null) {
+      return false;
+    }
+    if (tree.left.kind === TernaryTreeKind.ternaryTreeLeaf) {
+      if (hx < tree.left.hash) {
+        return false;
+      }
+      if (tree.left.hash === hx) {
+        tree = tree.left;
+        continue whileLoop; // notice, it jumps to while loop
+      }
+    } else {
+      if (hx < tree.left.minHash) {
+        return false;
+      }
+      if (hx <= tree.left.maxHash) {
         tree = tree.left;
         continue whileLoop; // notice, it jumps to while loop
       }
     }
-    if (tree.middle != null) {
-      if (tree.middle.kind === TernaryTreeKind.ternaryTreeLeaf) {
-        if (tree.middle.hash === hx) {
-          tree = tree.middle;
-          continue whileLoop; // notice, it jumps to while loop
-        }
-      } else if (hx >= tree.middle.minHash && hx <= tree.middle.maxHash) {
+
+    if (tree.middle == null) {
+      return false;
+    }
+    if (tree.middle.kind === TernaryTreeKind.ternaryTreeLeaf) {
+      if (hx < tree.middle.hash) {
+        return false;
+      }
+      if (tree.middle.hash === hx) {
+        tree = tree.middle;
+        continue whileLoop; // notice, it jumps to while loop
+      }
+    } else {
+      if (hx < tree.middle.minHash) {
+        return false;
+      }
+      if (hx <= tree.middle.maxHash) {
         tree = tree.middle;
         continue whileLoop; // notice, it jumps to while loop
       }
     }
-    if (tree.right != null) {
-      if (tree.right.kind === TernaryTreeKind.ternaryTreeLeaf) {
-        if (tree.right.hash === hx) {
-          tree = tree.right;
-          continue whileLoop; // notice, it jumps to while loop
-        }
-      } else if (hx >= tree.right.minHash && hx <= tree.right.maxHash) {
+
+    if (tree.right == null) {
+      return false;
+    }
+    if (tree.right.kind === TernaryTreeKind.ternaryTreeLeaf) {
+      if (hx < tree.right.hash) {
+        return false;
+      }
+      if (tree.right.hash === hx) {
+        tree = tree.right;
+        continue whileLoop; // notice, it jumps to while loop
+      }
+    } else {
+      if (hx < tree.right.minHash) {
+        return false;
+      }
+      if (hx <= tree.right.maxHash) {
         tree = tree.right;
         continue whileLoop; // notice, it jumps to while loop
       }
@@ -378,64 +423,6 @@ export function contains<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): boo
   return false;
 }
 
-export function mapGet<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): T {
-  let hx = hashGenerator(item);
-
-  let tree = originalTree;
-
-  whileLoop: while (tree != null) {
-    if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
-      let size = tree.elements.length;
-      for (let i = 0; i < size; i++) {
-        let pair = tree.elements[i];
-        if (dataEqual(pair[0], item)) {
-          return pair[1];
-        }
-      }
-      throw new Error(`Cannot find target for ${item}`);
-    }
-
-    // echo "looking for: ", hx, " ", item, " in ", tree.formatInline
-
-    if (tree.left != null) {
-      if (tree.left.kind == TernaryTreeKind.ternaryTreeLeaf) {
-        if (tree.left.hash === hx) {
-          tree = tree.left;
-          continue whileLoop; // notice, it jumps to while loop
-        }
-      } else if (hx >= tree.left.minHash && hx <= tree.left.maxHash) {
-        tree = tree.left;
-        continue whileLoop; // notice, it jumps to while loop
-      }
-    }
-    if (tree.middle != null) {
-      if (tree.middle.kind == TernaryTreeKind.ternaryTreeLeaf) {
-        if (tree.middle.hash === hx) {
-          tree = tree.middle;
-          continue whileLoop; // notice, it jumps to while loop
-        }
-      } else if (hx >= tree.middle.minHash && hx <= tree.middle.maxHash) {
-        tree = tree.middle;
-        continue whileLoop; // notice, it jumps to while loop
-      }
-    }
-    if (tree.right != null) {
-      if (tree.right.kind == TernaryTreeKind.ternaryTreeLeaf) {
-        if (tree.right.hash === hx) {
-          tree = tree.right;
-          continue whileLoop; // notice, it jumps to while loop
-        }
-      } else if (hx >= tree.right.minHash && hx <= tree.right.maxHash) {
-        tree = tree.right;
-        continue whileLoop; // notice, it jumps to while loop
-      }
-    }
-
-    throw new Error(`Cannot find target for ${item}`);
-  }
-
-  throw new Error(`Cannot find target for ${item}`);
-}
 export function mapGetDefault<K, T>(originalTree: TernaryTreeMap<K, T>, item: K, v0: T): T {
   let hx = hashGenerator(item);
 
@@ -455,35 +442,64 @@ export function mapGetDefault<K, T>(originalTree: TernaryTreeMap<K, T>, item: K,
 
     // echo "looking for: ", hx, " ", item, " in ", tree.formatInline
 
-    if (tree.left != null) {
-      if (tree.left.kind == TernaryTreeKind.ternaryTreeLeaf) {
-        if (tree.left.hash === hx) {
-          tree = tree.left;
-          continue whileLoop; // notice, it jumps to while loop
-        }
-      } else if (hx >= tree.left.minHash && hx <= tree.left.maxHash) {
+    if (tree.left == null) {
+      return v0;
+    }
+    if (tree.left.kind == TernaryTreeKind.ternaryTreeLeaf) {
+      if (hx < tree.left.hash) {
+        return v0;
+      }
+      if (tree.left.hash === hx) {
+        tree = tree.left;
+        continue whileLoop; // notice, it jumps to while loop
+      }
+    } else {
+      if (hx < tree.left.minHash) {
+        return v0;
+      }
+      if (hx <= tree.left.maxHash) {
         tree = tree.left;
         continue whileLoop; // notice, it jumps to while loop
       }
     }
-    if (tree.middle != null) {
-      if (tree.middle.kind == TernaryTreeKind.ternaryTreeLeaf) {
-        if (tree.middle.hash === hx) {
-          tree = tree.middle;
-          continue whileLoop; // notice, it jumps to while loop
-        }
-      } else if (hx >= tree.middle.minHash && hx <= tree.middle.maxHash) {
+
+    if (tree.middle == null) {
+      return v0;
+    }
+    if (tree.middle.kind == TernaryTreeKind.ternaryTreeLeaf) {
+      if (hx < tree.middle.hash) {
+        return v0;
+      }
+      if (tree.middle.hash === hx) {
+        tree = tree.middle;
+        continue whileLoop; // notice, it jumps to while loop
+      }
+    } else {
+      if (hx < tree.middle.minHash) {
+        return v0;
+      }
+      if (hx <= tree.middle.maxHash) {
         tree = tree.middle;
         continue whileLoop; // notice, it jumps to while loop
       }
     }
-    if (tree.right != null) {
-      if (tree.right.kind == TernaryTreeKind.ternaryTreeLeaf) {
-        if (tree.right.hash === hx) {
-          tree = tree.right;
-          continue whileLoop; // notice, it jumps to while loop
-        }
-      } else if (hx >= tree.right.minHash && hx <= tree.right.maxHash) {
+
+    if (tree.right == null) {
+      return v0;
+    }
+    if (tree.right.kind == TernaryTreeKind.ternaryTreeLeaf) {
+      if (hx < tree.right.hash) {
+        return v0;
+      }
+      if (tree.right.hash === hx) {
+        tree = tree.right;
+        continue whileLoop; // notice, it jumps to while loop
+      }
+    } else {
+      if (hx < tree.right.minHash) {
+        return v0;
+      }
+      if (hx <= tree.right.maxHash) {
         tree = tree.right;
         continue whileLoop; // notice, it jumps to while loop
       }
@@ -509,10 +525,23 @@ export function checkMapStructure<K, V>(tree: TernaryTreeMap<K, V>): boolean {
       }
     }
 
-    if (mapLen(tree) !== 1) {
+    if (mapLenBound(tree, 2) !== 1) {
       throw new Error(`Bad len at leaf node ${tree}`);
     }
   } else {
+    if (tree.left == null) {
+      if (tree.middle != null) {
+        throw new Error("Layout is not compact");
+      }
+      if (tree.middle != null) {
+        throw new Error("Layout is not compact");
+      }
+    }
+    if (tree.middle == null) {
+      if (tree.right != null) {
+        throw new Error("Layout is not compact");
+      }
+    }
     if (tree.left != null && tree.middle != null) {
       if (getMax(tree.left) >= getMin(tree.middle)) {
         throw new Error(`Wrong hash order at left/middle branches ${formatMapInline(tree, true)}`);
@@ -589,51 +618,54 @@ function assocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHas
   if (thisHash < tree.minHash) throw new Error("Unexpected missing hash in assoc, hash too small");
   else if (thisHash > tree.maxHash) throw new Error("Unexpected missing hash in assoc, hash too large");
 
-  if (tree.left != null)
-    if (rangeContainsHash(tree.left, thisHash)) {
-      let result: TernaryTreeMapTheBranch<K, T> = {
-        kind: TernaryTreeKind.ternaryTreeBranch,
-        maxHash: tree.maxHash,
-        minHash: tree.minHash,
-        left: assocExisted(tree.left, key, item, thisHash),
-        middle: tree.middle,
-        right: tree.right,
-        depth: 0, // TODO
-      };
-      return result;
-    }
-
-  if (tree.middle != null)
-    if (rangeContainsHash(tree.middle, thisHash)) {
-      let result: TernaryTreeMapTheBranch<K, T> = {
-        kind: TernaryTreeKind.ternaryTreeBranch,
-        maxHash: tree.maxHash,
-        minHash: tree.minHash,
-        left: tree.left,
-        middle: assocExisted(tree.middle, key, item, thisHash),
-        right: tree.right,
-        depth: 0, // TODO
-      };
-      return result;
-    }
-
-  if (tree.right != null) {
-    if (rangeContainsHash(tree.right, thisHash)) {
-      let result: TernaryTreeMapTheBranch<K, T> = {
-        kind: TernaryTreeKind.ternaryTreeBranch,
-        maxHash: tree.maxHash,
-        minHash: tree.minHash,
-        left: tree.left,
-        middle: tree.middle,
-        right: assocExisted(tree.right, key, item, thisHash),
-        depth: 0, // TODO
-      };
-      return result;
-    }
-  } else {
+  if (tree.left == null) {
     throw new Error("Unexpected missing hash in assoc, found not branch");
   }
-  return emptyBranch;
+  if (rangeContainsHash(tree.left, thisHash)) {
+    let result: TernaryTreeMapTheBranch<K, T> = {
+      kind: TernaryTreeKind.ternaryTreeBranch,
+      maxHash: tree.maxHash,
+      minHash: tree.minHash,
+      left: assocExisted(tree.left, key, item, thisHash),
+      middle: tree.middle,
+      right: tree.right,
+      depth: 0, // TODO
+    };
+    return result;
+  }
+
+  if (tree.middle == null) {
+    throw new Error("Unexpected missing hash in assoc, found not branch");
+  }
+  if (rangeContainsHash(tree.middle, thisHash)) {
+    let result: TernaryTreeMapTheBranch<K, T> = {
+      kind: TernaryTreeKind.ternaryTreeBranch,
+      maxHash: tree.maxHash,
+      minHash: tree.minHash,
+      left: tree.left,
+      middle: assocExisted(tree.middle, key, item, thisHash),
+      right: tree.right,
+      depth: 0, // TODO
+    };
+    return result;
+  }
+
+  if (tree.right == null) {
+    throw new Error("Unexpected missing hash in assoc, found not branch");
+  }
+  if (rangeContainsHash(tree.right, thisHash)) {
+    let result: TernaryTreeMapTheBranch<K, T> = {
+      kind: TernaryTreeKind.ternaryTreeBranch,
+      maxHash: tree.maxHash,
+      minHash: tree.minHash,
+      left: tree.left,
+      middle: tree.middle,
+      right: assocExisted(tree.right, key, item, thisHash),
+      depth: 0, // TODO
+    };
+    return result;
+  }
+  throw new Error("Unexpected missing hash in assoc, found not branch");
 }
 
 function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: Hash = null as any): TernaryTreeMap<K, T> {
@@ -645,7 +677,39 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
   thisHash = thisHash ?? hashGenerator(key);
 
   if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
-    if (thisHash === tree.hash) {
+    if (thisHash > tree.hash) {
+      let childBranch: TernaryTreeMapTheLeaf<K, T> = {
+        kind: TernaryTreeKind.ternaryTreeLeaf,
+        hash: thisHash,
+        elements: [[key, item]],
+      };
+      let result: TernaryTreeMapTheBranch<K, T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        maxHash: thisHash,
+        minHash: tree.hash,
+        left: tree,
+        middle: childBranch,
+        right: emptyBranch,
+        depth: 0, // TODO
+      };
+      return result;
+    } else if (thisHash < tree.hash) {
+      let childBranch: TernaryTreeMapTheLeaf<K, T> = {
+        kind: TernaryTreeKind.ternaryTreeLeaf,
+        hash: thisHash,
+        elements: [[key, item]],
+      };
+      let result: TernaryTreeMapTheBranch<K, T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        maxHash: tree.hash,
+        minHash: thisHash,
+        left: childBranch,
+        middle: tree,
+        right: emptyBranch,
+        depth: 0, // TODO
+      };
+      return result;
+    } else {
       let size = tree.elements.length;
       for (let i = 0; i < size; i++) {
         let pair = tree.elements[i];
@@ -659,78 +723,16 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
         newPairs[idx] = pair;
       }
       newPairs[tree.elements.length] = [key, item];
-    } else {
-      if (thisHash > tree.hash) {
-        let childBranch: TernaryTreeMapTheLeaf<K, T> = {
-          kind: TernaryTreeKind.ternaryTreeLeaf,
-          hash: thisHash,
-          elements: [[key, item]],
-        };
-        let result: TernaryTreeMapTheBranch<K, T> = {
-          kind: TernaryTreeKind.ternaryTreeBranch,
-          maxHash: thisHash,
-          minHash: tree.hash,
-          left: emptyBranch,
-          middle: tree,
-          right: childBranch,
-          depth: 0, // TODO
-        };
-        return result;
-      } else {
-        let childBranch: TernaryTreeMapTheLeaf<K, T> = {
-          kind: TernaryTreeKind.ternaryTreeLeaf,
-          hash: thisHash,
-          elements: [[key, item]],
-        };
-        let result: TernaryTreeMapTheBranch<K, T> = {
-          kind: TernaryTreeKind.ternaryTreeBranch,
-          maxHash: tree.hash,
-          minHash: thisHash,
-          left: childBranch,
-          middle: tree,
-          right: emptyBranch,
-          depth: 0, // TODO
-        };
-        return result;
-      }
+      let result: TernaryTreeMapTheLeaf<K, T> = {
+        kind: TernaryTreeKind.ternaryTreeLeaf,
+        hash: tree.hash,
+        elements: newPairs,
+      };
+      return result;
     }
   } else {
     if (thisHash < tree.minHash) {
-      if (tree.left == null) {
-        if (tree.middle == null) {
-          let childBranch: TernaryTreeMapTheLeaf<K, T> = {
-            kind: TernaryTreeKind.ternaryTreeLeaf,
-            hash: thisHash,
-            elements: [[key, item]],
-          };
-          let result: TernaryTreeMapTheBranch<K, T> = {
-            kind: TernaryTreeKind.ternaryTreeBranch,
-            maxHash: tree.maxHash,
-            minHash: thisHash,
-            left: emptyBranch,
-            middle: childBranch,
-            right: tree.right,
-            depth: 0, // TODO
-          };
-          return result;
-        } else {
-          let childBranch: TernaryTreeMapTheLeaf<K, T> = {
-            kind: TernaryTreeKind.ternaryTreeLeaf,
-            hash: thisHash,
-            elements: [[key, item]],
-          };
-          let result: TernaryTreeMapTheBranch<K, T> = {
-            kind: TernaryTreeKind.ternaryTreeBranch,
-            maxHash: tree.maxHash,
-            minHash: thisHash,
-            left: childBranch,
-            middle: tree.middle,
-            right: tree.right,
-            depth: 0, // TODO
-          };
-          return result;
-        }
-      } else if (tree.right == null) {
+      if (tree.right == null) {
         let childBranch: TernaryTreeMapTheLeaf<K, T> = {
           kind: TernaryTreeKind.ternaryTreeLeaf,
           hash: thisHash,
@@ -766,41 +768,8 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
     }
 
     if (thisHash > tree.maxHash) {
-      if (tree.right == null) {
-        if (tree.middle == null) {
-          let childBranch: TernaryTreeMapTheLeaf<K, T> = {
-            kind: TernaryTreeKind.ternaryTreeLeaf,
-            hash: thisHash,
-            elements: [[key, item]],
-          };
-          let result: TernaryTreeMapTheBranch<K, T> = {
-            kind: TernaryTreeKind.ternaryTreeBranch,
-            maxHash: thisHash,
-            minHash: tree.minHash,
-            left: tree.left,
-            middle: childBranch,
-            right: emptyBranch,
-            depth: 0, // TODO
-          };
-          return result;
-        } else {
-          let childBranch: TernaryTreeMapTheLeaf<K, T> = {
-            kind: TernaryTreeKind.ternaryTreeLeaf,
-            hash: thisHash,
-            elements: [[key, item]],
-          };
-          let result: TernaryTreeMapTheBranch<K, T> = {
-            kind: TernaryTreeKind.ternaryTreeBranch,
-            maxHash: thisHash,
-            minHash: tree.minHash,
-            left: tree.left,
-            middle: tree.middle,
-            right: childBranch,
-            depth: 0, // TODO
-          };
-          return result;
-        }
-      } else if (tree.left == null) {
+      // in compact layout, left arm must be existed
+      if (tree.middle == null) {
         let childBranch: TernaryTreeMapTheLeaf<K, T> = {
           kind: TernaryTreeKind.ternaryTreeLeaf,
           hash: thisHash,
@@ -810,12 +779,27 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
           kind: TernaryTreeKind.ternaryTreeBranch,
           maxHash: thisHash,
           minHash: tree.minHash,
-          left: tree.middle,
-          middle: tree.right,
+          left: tree.left,
+          middle: childBranch,
+          right: emptyBranch,
+          depth: 0, // TODO
+        };
+        return result;
+      } else if (tree.right == null) {
+        let childBranch: TernaryTreeMapTheLeaf<K, T> = {
+          kind: TernaryTreeKind.ternaryTreeLeaf,
+          hash: thisHash,
+          elements: [[key, item]],
+        };
+        let result: TernaryTreeMapTheBranch<K, T> = {
+          kind: TernaryTreeKind.ternaryTreeBranch,
+          maxHash: thisHash,
+          minHash: tree.minHash,
+          left: tree.left,
+          middle: tree.middle,
           right: childBranch,
           depth: 0, // TODO
         };
-
         return result;
       } else {
         let childBranch: TernaryTreeMapTheLeaf<K, T> = {
@@ -827,9 +811,9 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
           kind: TernaryTreeKind.ternaryTreeBranch,
           maxHash: thisHash,
           minHash: tree.minHash,
-          left: emptyBranch,
-          middle: tree,
-          right: childBranch,
+          left: tree,
+          middle: childBranch,
+          right: emptyBranch,
           depth: 0, // TODO
         };
 
@@ -861,7 +845,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
       };
       return result;
     }
-    if (rangeContainsHash(tree.middle, thisHash)) {
+    if (rangeContainsHash(tree.right, thisHash)) {
       let result: TernaryTreeMapTheBranch<K, T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
         maxHash: tree.maxHash,
@@ -874,46 +858,33 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
       return result;
     }
 
-    if (tree.middle != null) {
-      if (thisHash < getMin(tree.middle)) {
-        let result: TernaryTreeMapTheBranch<K, T> = {
-          kind: TernaryTreeKind.ternaryTreeBranch,
-          maxHash: tree.maxHash,
-          minHash: tree.minHash,
-          left: assocNew(tree.left, key, item, thisHash),
-          middle: tree.middle,
-          right: tree.right,
-          depth: 0, // TODO
-        };
-        return result;
-      } else {
-        let result: TernaryTreeMap<K, T> = {
-          kind: TernaryTreeKind.ternaryTreeBranch,
-          maxHash: tree.maxHash,
-          minHash: tree.minHash,
-          left: tree.left,
-          middle: tree.middle,
-          right: assocNew(tree.right, key, item, thisHash),
-          depth: 0, // TODO
-        };
-        return result;
-      }
+    if (tree.middle == null) {
+      throw new Error("unreachable. if inside range, then middle should be here");
     }
-
-    // not outbound, not at any branch, and middle is empty, so put in middle
-    let result: TernaryTreeMapTheBranch<K, T> = {
-      kind: TernaryTreeKind.ternaryTreeBranch,
-      maxHash: tree.maxHash,
-      minHash: tree.minHash,
-      left: tree.left,
-      middle: assocNew(tree.middle, key, item, thisHash),
-      right: tree.right,
-      depth: 0, // TODO
-    };
-    return result;
+    if (thisHash < getMin(tree.middle)) {
+      let result: TernaryTreeMapTheBranch<K, T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        maxHash: tree.maxHash,
+        minHash: tree.minHash,
+        left: assocNew(tree.left, key, item, thisHash),
+        middle: tree.middle,
+        right: tree.right,
+        depth: 0, // TODO
+      };
+      return result;
+    } else {
+      let result: TernaryTreeMap<K, T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        maxHash: tree.maxHash,
+        minHash: tree.minHash,
+        left: tree.left,
+        middle: tree.middle,
+        right: assocNew(tree.right, key, item, thisHash),
+        depth: 0, // TODO
+      };
+      return result;
+    }
   }
-
-  return emptyBranch;
 }
 
 export function assocMap<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, disableBalancing: boolean = false): TernaryTreeMap<K, T> {
@@ -935,26 +906,26 @@ function dissocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K): TernaryTreeMap
 
   if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
     if (tree.hash === hashGenerator(key)) {
-      let newPairs: Array<[K, T]> = [];
       let size = tree.elements.length;
-      for (let i = 0; i < size; i++) {
-        let pair = tree.elements[i];
-        if (!dataEqual(pair[0], key)) {
-          newPairs.push(pair);
+      if (size === 1 && dataEqual(key, tree.elements[0][0])) {
+        return emptyBranch;
+      } else {
+        let newPairs: Array<[K, T]> = [];
+        for (let i = 0; i < size; i++) {
+          let pair = tree.elements[i];
+          if (!dataEqual(pair[0], key)) {
+            newPairs.push(pair);
+          }
         }
-      }
-      if (newPairs.length > 0) {
         let result: TernaryTreeMapTheLeaf<K, T> = { kind: TernaryTreeKind.ternaryTreeLeaf, hash: tree.hash, elements: newPairs };
         return result;
-      } else {
-        return emptyBranch;
       }
     } else {
       throw new Error("Unexpected missing key in dissoc on leaf");
     }
   }
 
-  if (mapLen(tree) === 1) {
+  if (mapLenBound(tree, 2) === 1) {
     if (!contains(tree, key)) {
       throw new Error("Unexpected missing key in dissoc single branch");
     }
@@ -965,64 +936,92 @@ function dissocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K): TernaryTreeMap
 
   if (rangeContainsHash(tree.left, thisHash)) {
     let changedBranch = dissocExisted(tree.left, key);
-    let minHash: number;
-    if (changedBranch != null) {
-      minHash = getMin(changedBranch);
-    } else if (tree.middle != null) {
-      minHash = getMin(tree.middle);
-    } else {
-      minHash = getMin(tree.right);
-    }
 
-    let result: TernaryTreeMapTheBranch<K, T> = {
-      kind: TernaryTreeKind.ternaryTreeBranch,
-      maxHash: tree.maxHash,
-      minHash: minHash,
-      left: changedBranch,
-      middle: tree.middle,
-      right: tree.right,
-      depth: 0, // TODO
-    };
-    return result;
+    if (isMapEmpty(changedBranch)) {
+      if (isMapEmpty(tree.right)) {
+        return tree.middle;
+      }
+      let result: TernaryTreeMapTheBranch<K, T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        maxHash: tree.maxHash,
+        minHash: getMin(tree.middle),
+        left: tree.middle,
+        middle: tree.right,
+        right: emptyBranch,
+        depth: 0, // TODO
+      };
+      return result;
+    } else {
+      let result: TernaryTreeMapTheBranch<K, T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        maxHash: tree.maxHash,
+        minHash: getMin(changedBranch),
+        left: changedBranch,
+        middle: tree.middle,
+        right: tree.right,
+        depth: 0, // TODO
+      };
+      return result;
+    }
   }
 
   if (rangeContainsHash(tree.middle, thisHash)) {
     let changedBranch = dissocExisted(tree.middle, key);
 
-    let result: TernaryTreeMapTheBranch<K, T> = {
-      kind: TernaryTreeKind.ternaryTreeBranch,
-      maxHash: getMax(tree),
-      minHash: tree.minHash,
-      left: tree.left,
-      middle: changedBranch,
-      right: tree.right,
-      depth: 0, // TODO
-    };
-    return result;
+    if (isMapEmpty(changedBranch)) {
+      if (isMapEmpty(tree.right)) {
+        return tree.left;
+      }
+      let result: TernaryTreeMapTheBranch<K, T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        maxHash: tree.maxHash,
+        minHash: tree.minHash,
+        left: tree.left,
+        middle: tree.right,
+        right: emptyBranch,
+        depth: 0, // TODO
+      };
+      return result;
+    } else {
+      let result: TernaryTreeMapTheBranch<K, T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        maxHash: tree.maxHash,
+        minHash: tree.minHash,
+        left: tree.left,
+        middle: changedBranch,
+        right: tree.right,
+        depth: 0, // TODO
+      };
+      return result;
+    }
   }
 
   if (rangeContainsHash(tree.right, thisHash)) {
     let changedBranch = dissocExisted(tree.right, key);
 
-    let maxHash: number;
-    if (changedBranch != null) {
-      maxHash = getMax(changedBranch);
-    } else if (tree.middle != null) {
-      maxHash = getMax(tree.middle);
+    if (changedBranch == null) {
+      let result: TernaryTreeMapTheBranch<K, T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        maxHash: getMax(tree.middle),
+        minHash: tree.minHash,
+        left: tree.left,
+        middle: tree.middle,
+        right: emptyBranch,
+        depth: 0, // TODO
+      };
+      return result;
     } else {
-      maxHash = getMax(tree.left);
+      let result: TernaryTreeMapTheBranch<K, T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        maxHash: getMax(changedBranch),
+        minHash: tree.minHash,
+        left: tree.left,
+        middle: tree.middle,
+        right: changedBranch,
+        depth: 0, // TODO
+      };
+      return result;
     }
-
-    let result: TernaryTreeMapTheBranch<K, T> = {
-      kind: TernaryTreeKind.ternaryTreeBranch,
-      maxHash: maxHash,
-      minHash: tree.minHash,
-      left: tree.left,
-      middle: tree.middle,
-      right: changedBranch,
-      depth: 0, // TODO
-    };
-    return result;
   }
 
   throw new Error("Cannot find branch in dissoc");
@@ -1156,9 +1155,14 @@ export function mapEqual<K, V>(xs: TernaryTreeMap<K, V>, ys: TernaryTreeMap<K, V
     return true;
   }
 
-  for (let key of toKeys(xs)) {
-    let vx = mapGet(xs, key);
-    let vy = mapGet(ys, key);
+  for (let pair of toPairsArray(xs)) {
+    let key = pair[0];
+    let vx = pair[1];
+
+    if (!contains(ys, key)) {
+      return false;
+    }
+    let vy = mapGetDefault(ys, key, null);
 
     // TODO compare deep structures
     if (!dataEqual(vx, vy)) {

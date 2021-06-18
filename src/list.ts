@@ -15,6 +15,13 @@ export function getDepth<T>(tree: TernaryTreeList<T>): number {
 
 let emptyBranch: TernaryTreeList<any> = null as any;
 
+let isEmptyBranch = (x: TernaryTreeList<any>) => {
+  if (x == null) {
+    return true;
+  }
+  return x.size == 0;
+};
+
 function decideParentDepth<T>(...xs: Array<TernaryTreeList<T>>): number {
   let depth = 0;
   for (let i = 0; i < xs.length; i++) {
@@ -36,14 +43,14 @@ export function makeTernaryTreeList<T>(size: number, offset: number, xs: /* var 
       return xs[offset];
     case 2: {
       let left = xs[offset];
-      let right = xs[offset + 1];
+      let middle = xs[offset + 1];
       let result: TernaryTreeList<T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
-        size: listLen(left) + listLen(right),
+        size: listLen(left) + listLen(middle),
         left: left,
-        middle: emptyBranch,
-        right: right,
-        depth: decideParentDepth(left, right),
+        middle: middle,
+        right: emptyBranch,
+        depth: decideParentDepth(left, middle),
       };
       return result;
     }
@@ -400,15 +407,7 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
   }
 
   if (listLen(tree) === 1) {
-    let result: TernaryTreeList<T> = {
-      kind: TernaryTreeKind.ternaryTreeBranch,
-      size: 0,
-      depth: 1,
-      left: emptyBranch,
-      middle: emptyBranch,
-      right: emptyBranch,
-    };
-    return result;
+    return emptyBranch;
   }
 
   if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
@@ -420,40 +419,56 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
   let rightSize = listLen(tree.right);
 
   if (leftSize + middleSize + rightSize !== tree.size) {
-    throw new Error("tree.size does not match sum case branch sizes");
+    throw new Error("tree.size does not match sum from branch sizes");
   }
 
   let result: TernaryTreeList<T> = emptyBranch;
 
   if (idx <= leftSize - 1) {
     let changedBranch = dissocList(tree.left, idx);
-    if (changedBranch.size === 0) {
-      changedBranch = emptyBranch;
+    if (changedBranch == null || changedBranch.size === 0) {
+      result = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        size: tree.size - 1,
+        depth: decideParentDepth(tree.middle, tree.right),
+        left: tree.middle,
+        middle: tree.right,
+        right: emptyBranch,
+      };
+    } else {
+      result = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        size: tree.size - 1,
+        depth: decideParentDepth(changedBranch, tree.middle, tree.right),
+        left: changedBranch,
+        middle: tree.middle,
+        right: tree.right,
+      };
     }
-    result = {
-      kind: TernaryTreeKind.ternaryTreeBranch,
-      size: tree.size - 1,
-      depth: decideParentDepth(changedBranch, tree.middle, tree.right),
-      left: changedBranch,
-      middle: tree.middle,
-      right: tree.right,
-    };
   } else if (idx <= leftSize + middleSize - 1) {
     let changedBranch = dissocList(tree.middle, idx - leftSize);
-    if (changedBranch.size === 0) {
-      changedBranch = emptyBranch;
+    if (changedBranch == null || changedBranch.size === 0) {
+      result = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        size: tree.size - 1,
+        depth: decideParentDepth(tree.left, changedBranch, tree.right),
+        left: tree.left,
+        middle: tree.right,
+        right: emptyBranch,
+      };
+    } else {
+      result = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        size: tree.size - 1,
+        depth: decideParentDepth(tree.left, changedBranch, tree.right),
+        left: tree.left,
+        middle: changedBranch,
+        right: tree.right,
+      };
     }
-    result = {
-      kind: TernaryTreeKind.ternaryTreeBranch,
-      size: tree.size - 1,
-      depth: decideParentDepth(tree.left, changedBranch, tree.right),
-      left: tree.left,
-      middle: changedBranch,
-      right: tree.right,
-    };
   } else {
     let changedBranch = dissocList(tree.right, idx - leftSize - middleSize);
-    if (changedBranch.size === 0) {
+    if (changedBranch == null || changedBranch.size === 0) {
       changedBranch = emptyBranch;
     }
     result = {
@@ -465,13 +480,8 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
       right: changedBranch,
     };
   }
-  // TODO
-  if (listLen(result) === 1) {
-    result = {
-      kind: TernaryTreeKind.ternaryTreeLeaf,
-      size: 1,
-      value: listGet(result, 0),
-    };
+  if (result.middle == null) {
+    return result.left;
   }
   return result;
 }
@@ -522,85 +532,53 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
         kind: TernaryTreeKind.ternaryTreeBranch,
         depth: getDepth(tree) + 1,
         size: 2,
-        left: emptyBranch,
-        middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-        right: tree,
+        left: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+        middle: tree,
+        right: emptyBranch,
       };
       return result;
     }
   }
 
   if (listLen(tree) === 1) {
-    if (after)
-      if (tree.left != null) {
-        let result: TernaryTreeList<T> = {
-          kind: TernaryTreeKind.ternaryTreeBranch,
-          size: 2,
-          depth: 2,
-          left: tree.left,
-          middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-          right: emptyBranch,
-        };
-        return result;
-      } else if (tree.middle != null) {
-        let result: TernaryTreeList<T> = {
-          kind: TernaryTreeKind.ternaryTreeBranch,
-          size: 2,
-          depth: 2,
-          left: emptyBranch,
-          middle: tree.middle,
-          right: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-        };
-        return result;
-      } else {
-        let result: TernaryTreeList<T> = {
-          kind: TernaryTreeKind.ternaryTreeBranch,
-          size: 2,
-          depth: 2,
-          left: tree.right,
-          middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-          right: emptyBranch,
-        };
-        return result;
-      }
-    else {
-      if (tree.right != null) {
-        let result: TernaryTreeList<T> = {
-          kind: TernaryTreeKind.ternaryTreeBranch,
-          size: 2,
-          depth: 2,
-          left: emptyBranch,
-          middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-          right: tree.right,
-        };
-        return result;
-      } else if (tree.middle != null) {
-        let result: TernaryTreeList<T> = {
-          kind: TernaryTreeKind.ternaryTreeBranch,
-          size: 2,
-          depth: getDepth(tree.middle) + 1,
-          left: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-          middle: tree.middle,
-          right: emptyBranch,
-        };
-        return result;
-      } else {
-        let result: TernaryTreeList<T> = {
-          kind: TernaryTreeKind.ternaryTreeBranch,
-          size: 2,
-          depth: getDepth(tree.middle) + 1,
-          left: emptyBranch,
-          middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-          right: tree.left,
-        };
-        return result;
-      }
+    if (after) {
+      // in compact mode, values placed at left
+      let result: TernaryTreeList<T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        size: 2,
+        depth: 2,
+        left: tree.left,
+        middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+        right: emptyBranch,
+      };
+      return result;
+    } else {
+      let result: TernaryTreeList<T> = {
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        size: 2,
+        depth: getDepth(tree.middle) + 1,
+        left: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+        middle: tree.left,
+        right: emptyBranch,
+      };
+      return result;
     }
   }
 
-  if (listLen(tree) === 2) {
+  if (listLen(tree) === 2 && tree.middle != null) {
     if (after) {
-      if (tree.right == null) {
+      if (idx === 0) {
+        let result: TernaryTreeList<T> = {
+          kind: TernaryTreeKind.ternaryTreeBranch,
+          size: 3,
+          depth: 2,
+          left: tree.left,
+          middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+          right: tree.middle,
+        };
+        return result;
+      }
+      if (idx === 1) {
         let result: TernaryTreeList<T> = {
           kind: TernaryTreeKind.ternaryTreeBranch,
           size: 3,
@@ -610,114 +588,32 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
           right: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
         };
         return result;
-      } else if (tree.middle == null) {
-        if (idx === 0) {
-          let result: TernaryTreeList<T> = {
-            kind: TernaryTreeKind.ternaryTreeBranch,
-            size: 3,
-            depth: 2,
-            left: tree.left,
-            middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-            right: tree.right,
-          };
-          return result;
-        } else if (idx === 1) {
-          let result: TernaryTreeList<T> = {
-            kind: TernaryTreeKind.ternaryTreeBranch,
-            size: 3,
-            depth: 2,
-            left: tree.left,
-            middle: tree.right,
-            right: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-          };
-          return result;
-        } else {
-          throw new Error(`Unexpected idx: ${idx}`);
-        }
       } else {
-        if (idx === 0) {
-          let result: TernaryTreeList<T> = {
-            kind: TernaryTreeKind.ternaryTreeBranch,
-            size: 3,
-            depth: 2,
-            left: tree.middle,
-            middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-            right: tree.right,
-          };
-          return result;
-        } else if (idx === 1) {
-          let result: TernaryTreeList<T> = {
-            kind: TernaryTreeKind.ternaryTreeBranch,
-            size: 3,
-            depth: 2,
-            left: tree.middle,
-            middle: tree.right,
-            right: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-          };
-          return result;
-        } else {
-          throw new Error("Unexpected idx: {idx}");
-        }
+        throw new Error("cannot insert after position 2 since only 2 elements here");
       }
     } else {
-      if (tree.left == null) {
+      if (idx === 0) {
         let result: TernaryTreeList<T> = {
           kind: TernaryTreeKind.ternaryTreeBranch,
           size: 3,
           depth: 2,
           left: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-          middle: tree.middle,
-          right: tree.right,
+          middle: tree.left,
+          right: tree.middle,
         };
         return result;
-      } else if (tree.middle == null) {
-        if (idx === 0) {
-          let result: TernaryTreeList<T> = {
-            kind: TernaryTreeKind.ternaryTreeBranch,
-            size: 3,
-            depth: 2,
-            left: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-            middle: tree.left,
-            right: tree.right,
-          };
-          return result;
-        } else if (idx === 1) {
-          let result: TernaryTreeList<T> = {
-            kind: TernaryTreeKind.ternaryTreeBranch,
-            size: 3,
-            depth: 2,
-            left: tree.left,
-            middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-            right: tree.right,
-          };
-          return result;
-        } else {
-          throw new Error(`Unexpected idx: ${idx}`);
-        }
+      } else if (idx === 1) {
+        let result: TernaryTreeList<T> = {
+          kind: TernaryTreeKind.ternaryTreeBranch,
+          size: 3,
+          depth: 2,
+          left: tree.left,
+          middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+          right: tree.middle,
+        };
+        return result;
       } else {
-        if (idx === 0) {
-          let result: TernaryTreeList<T> = {
-            kind: TernaryTreeKind.ternaryTreeBranch,
-            size: 3,
-            depth: 2,
-            left: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-            middle: tree.left,
-            right: tree.middle,
-          };
-          return result;
-        } else if (idx === 1) {
-          let result: TernaryTreeList<T> = {
-            kind: TernaryTreeKind.ternaryTreeBranch,
-            size: 3,
-            depth: 2,
-            left: tree.left,
-            middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-            right: tree.middle,
-          };
-          return result;
-        } else {
-          throw new Error(`Unexpected idx: ${idx}`);
-        }
+        throw new Error("cannot insert before position 2 since only 2 elements here");
       }
     }
   }
@@ -738,9 +634,9 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
         kind: TernaryTreeKind.ternaryTreeBranch,
         size: tree.size + 1,
         depth: tree.depth + 1,
-        left: emptyBranch,
-        middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-        right: tree,
+        left: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
+        middle: tree,
+        right: emptyBranch,
       };
       return result;
     }
@@ -772,14 +668,14 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
     return result;
   }
 
-  if (!after && idx === 0 && leftSize === 0 && middleSize >= rightSize) {
+  if (!after && idx === 0 && rightSize === 0 && middleSize >= rightSize) {
     let result: TernaryTreeList<T> = {
       kind: TernaryTreeKind.ternaryTreeBranch,
       size: tree.size + 1,
       depth: tree.depth,
       left: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-      middle: tree.middle,
-      right: tree.right,
+      middle: tree.left,
+      right: tree.middle,
     };
     return result;
   }
