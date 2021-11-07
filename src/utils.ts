@@ -98,7 +98,7 @@ export let cmp = (x: any, y: any) => {
 export let deepEqual = function (x: any, y: any) {
   if (x === y) {
     return true;
-  } else if (typeof x == "object" && x != null && typeof y == "object" && y != null) {
+  } else if (typeof x === "object" && x != null && typeof y === "object" && y != null) {
     if (Object.keys(x).length != Object.keys(y).length) return false;
 
     for (var prop in x) {

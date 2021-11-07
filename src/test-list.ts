@@ -1,6 +1,7 @@
 import {
   listToString,
   initTernaryTreeList,
+  initTernaryTreeListFromRange,
   indexOf,
   findIndex,
   reverse,
@@ -259,6 +260,12 @@ export let runListTests = () => {
 
     checkListStructure(data3);
     check(listEqual(data2, data3));
-    check(formatListInline(data2) == formatListInline(data3));
+    check(formatListInline(data2) === formatListInline(data3));
+  });
+
+  test("concat", () => {
+    let data1 = initTernaryTreeList([3, 4]);
+    let data2 = initTernaryTreeListFromRange([1, 2, 3, 4, 5, 6], 2, 4);
+    check(listEqual(data1, data2));
   });
 };
