@@ -1,5 +1,4 @@
 import { RefInt, TernaryTreeKind, TernaryTreeList, TernaryTreeListTheBranch } from "./types";
-import {} from "./map";
 import { dataEqual, divideTernarySizes, roughIntPow } from "./utils";
 
 // just get, will not compute recursively
@@ -91,6 +90,16 @@ export function initTernaryTreeList<T>(xs: Array<T>): TernaryTreeList<T> {
   let ys = new Array<TernaryTreeList<T>>(xs.length);
   let size = xs.length;
   for (let idx = 0; idx < size; idx++) {
+    let x = xs[idx];
+    ys[idx] = { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: x };
+  }
+  return makeTernaryTreeList(xs.length, 0, ys);
+}
+
+// from a slice of an existed array
+export function initTernaryTreeListFromRange<T>(xs: Array<T>, from: number, to: number): TernaryTreeList<T> {
+  let ys = new Array<TernaryTreeList<T>>(xs.length);
+  for (let idx = from; idx < to; idx++) {
     let x = xs[idx];
     ys[idx] = { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: x };
   }
