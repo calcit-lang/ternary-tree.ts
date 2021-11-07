@@ -132,8 +132,9 @@ export function initTernaryTreeMapFromHashEntries<K, T>(xs: Array<TernaryTreeMap
   return makeTernaryTreeMap(xs.length, 0, xs);
 }
 
-export function initTernaryTreeMap<K, T>(t: Map<K, T> | Array<[K, T]>): TernaryTreeMap<K, T> {
+export function initTernaryTreeMap<K, T>(t: Map<K, T>): TernaryTreeMap<K, T> {
   let groupBuffers: Map<number, Array<[K, T]>> = new Map();
+  let xs: Array<TernaryTreeMapHashEntry<K, T>> = [];
   for (let [k, v] of t) {
     let h = hashGenerator(k);
     if (groupBuffers.has(h)) {
@@ -144,19 +145,52 @@ export function initTernaryTreeMap<K, T>(t: Map<K, T> | Array<[K, T]>): TernaryT
         throw new Error("Expected referece to pairs");
       }
     } else {
-      groupBuffers.set(h, [[k, v]]);
+      let pairs: [K, T][] = [[k, v]];
+      groupBuffers.set(h, pairs);
+      xs.push({
+        hash: h,
+        pairs,
+      });
     }
   }
 
-  let xs: Array<TernaryTreeMapHashEntry<K, T>> = [];
   for (let [k, v] of groupBuffers) {
     if (v != null) {
-      xs.push({
-        hash: k,
-        pairs: v,
-      });
     } else {
       throw new Error("Expected reference to paris");
+    }
+  }
+
+  // MUTABLE in-place sort
+  xs.sort((a, b) => cmp(a.hash, b.hash));
+
+  let result = initTernaryTreeMapFromHashEntries(xs);
+  // checkMapStructure(result);
+  return result;
+}
+
+// use for..in for performance
+export function initTernaryTreeMapFromArray<K, T>(t: Array<[K, T]>): TernaryTreeMap<K, T> {
+  let groupBuffers: Record<number, Array<[K, T]>> = {};
+  let xs: Array<TernaryTreeMapHashEntry<K, T>> = [];
+  for (let idx = 0; idx < t.length; idx++) {
+    let k = t[idx][0];
+    let v = t[idx][1];
+    let h = hashGenerator(k);
+    if (groupBuffers[h] != null) {
+      let branch = groupBuffers[h];
+      if (branch != null) {
+        branch.push([k, v]);
+      } else {
+        throw new Error("Expected referece to pairs");
+      }
+    } else {
+      let pairs: [K, T][] = [[k, v]];
+      groupBuffers[h] = pairs;
+      xs.push({
+        hash: h,
+        pairs: pairs,
+      });
     }
   }
 
