@@ -2,6 +2,7 @@ import { hashGenerator } from "./types";
 import { test, check, cmp, deepEqual, justDisplay } from "./utils";
 import {
   initTernaryTreeMap,
+  initTernaryTreeMapFromArray,
   toHashSortedPairs,
   merge,
   mergeSkip,
@@ -40,7 +41,7 @@ export let runMapTests = () => {
     });
 
     let data10 = initTernaryTreeMap<string, number>(dict);
-    let data11 = initTernaryTreeMap<string, number>(inList);
+    let data11 = initTernaryTreeMapFromArray<string, number>(inList);
     checkMapStructure(data10);
     checkMapStructure(data11);
 
