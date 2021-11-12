@@ -36,11 +36,7 @@ import { test, check, arrayEqual, checkEqual } from "./utils";
 
 export let runListTests = () => {
   test("init list", () => {
-    check(
-      listToString(
-        initTernaryTreeList<number>([1, 2, 3, 4])
-      ) === "TernaryTreeList[4, ...]"
-    );
+    check(listToString(initTernaryTreeList<number>([1, 2, 3, 4])) === "TernaryTreeList[4, ...]");
 
     let origin11 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
     let data11 = initTernaryTreeList<number>(origin11);
@@ -48,9 +44,7 @@ export let runListTests = () => {
     check(checkListStructure(data11));
 
     checkEqual(formatListInline(data11), "((1 (2 3 _) 4) (5 6 7) (8 (9 10 _) 11))");
-    check(
-      arrayEqual<number>(origin11, [...listToItems(data11)])
-    );
+    check(arrayEqual<number>(origin11, [...listToItems(data11)]));
 
     check(arrayEqual<number>([...listToItems(data11)], [...indexToItems(data11)]));
 
@@ -154,6 +148,9 @@ export let runListTests = () => {
     let data4 = initTernaryTreeList(origin4);
     let data4n = initTernaryTreeList(origin4);
     let data4Made = prepend(initTernaryTreeList([2, 3, 4]), 1);
+    checkListStructure(data4);
+    checkListStructure(data4n);
+    checkListStructure(data4Made);
 
     check(sameListShape(data4, data4) === true);
     check(sameListShape(data4, data4n) === true);
@@ -169,6 +166,7 @@ export let runListTests = () => {
     var data = initTernaryTreeList<number>([]);
     for (let idx = 0; idx < 20; idx++) {
       data = append(data, idx, true);
+      checkListStructure(data);
     }
     // echo data.formatInline
     check(formatListInline(data) === "(((0 1 2) (3 4 5) (6 7 8)) ((9 10 11) (12 13 14) (15 16 17)) (18 19 _))");
@@ -180,6 +178,7 @@ export let runListTests = () => {
   test("iterator", () => {
     let origin4 = [1, 2, 3, 4];
     let data4 = initTernaryTreeList(origin4);
+    checkListStructure(data4);
 
     var i = 0;
     for (let item of listToItems(data4)) {
@@ -200,14 +199,23 @@ export let runListTests = () => {
     var data = initTernaryTreeList<number>([]);
     for (let idx = 0; idx < 20; idx++) {
       data = append(data, idx, true);
+      checkListStructure(data);
     }
 
     check(checkListStructure(data));
+
+    for (let idx = 0; idx < 20; idx++) {
+      data = rest(data);
+      checkListStructure(data);
+    }
 
     let origin11 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
     let data11 = initTernaryTreeList<number>(origin11);
 
     check(checkListStructure(data11));
+
+    checkListStructure(prepend(initEmptyTernaryTreeList(), 1));
+    checkListStructure(prepend(null as any, 1));
   });
 
   test("slices", () => {
@@ -224,6 +232,7 @@ export let runListTests = () => {
     for (let i = 0; i < 40; i++) {
       for (let j = i; j < 40; j++) {
         check(arrayEqual<number>([...listToItems(slice(data, i, j))], list40.slice(i, j)));
+        checkListStructure(slice(data, i, j));
       }
     }
   });
@@ -238,6 +247,7 @@ export let runListTests = () => {
   test("list traverse", () => {
     var i = 0;
     let data = initTernaryTreeList<number>([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    checkListStructure(data);
     for (let x of listToItems(data)) {
       i = i + 1;
     }
@@ -267,5 +277,7 @@ export let runListTests = () => {
     let data1 = initTernaryTreeList([3, 4]);
     let data2 = initTernaryTreeListFromRange([1, 2, 3, 4, 5, 6], 2, 4);
     check(listEqual(data1, data2));
+    checkListStructure(data1);
+    checkListStructure(data2);
   });
 };
