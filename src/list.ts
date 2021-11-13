@@ -852,7 +852,7 @@ export function listEqual<T>(xs: TernaryTreeList<T>, ys: TernaryTreeList<T>): bo
 }
 
 export function checkListStructure<T>(tree: TernaryTreeList<T>): boolean {
-  if (tree == null) {
+  if (tree == null || listLen(tree) === 0) {
     return true;
   } else {
     switch (tree.kind) {
