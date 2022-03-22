@@ -16,7 +16,7 @@ jobs:
 
       - run: yarn && yarn tsc -d
 
-      - run: target=node yarn webpack && node lib/bundle.js
+      - run: yarn bundle && node lib/bundle.js
         name: run in Node tests
 
       - run: npm publish

@@ -1,5 +1,14 @@
-import { TernaryTreeMap, TernaryTreeKind, TernaryTreeMapTheLeaf, TernaryTreeMapTheBranch, RefInt, Hash, hashGenerator, TernaryTreeMapHashEntry } from "./types";
-import { divideTernarySizes, roughIntPow, cmp, dataEqual } from "./utils";
+import {
+  TernaryTreeMap,
+  TernaryTreeKind,
+  TernaryTreeMapTheLeaf,
+  TernaryTreeMapTheBranch,
+  RefInt,
+  Hash,
+  hashGenerator,
+  TernaryTreeMapHashEntry,
+} from "./types.mjs";
+import { divideTernarySizes, roughIntPow, cmp, dataEqual } from "./utils.mjs";
 
 let emptyBranch: TernaryTreeMap<any, any> = null as any;
 let nilResult = null as any;

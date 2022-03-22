@@ -1,5 +1,5 @@
-import { RefInt, TernaryTreeKind, TernaryTreeList, TernaryTreeListTheBranch } from "./types";
-import { dataEqual, divideTernarySizes, roughIntPow } from "./utils";
+import { RefInt, TernaryTreeKind, TernaryTreeList, TernaryTreeListTheBranch } from "./types.mjs";
+import { dataEqual, divideTernarySizes, roughIntPow } from "./utils.mjs";
 
 // just get, will not compute recursively
 export function getDepth<T>(tree: TernaryTreeList<T>): number {

@@ -111,7 +111,7 @@ export let deepEqual = function (x: any, y: any) {
   } else return false;
 };
 
-export let arrayEqual = <T>(xs: Array<T>, ys: Array<T>): boolean => {
+export function arrayEqual<T>(xs: Array<T>, ys: Array<T>): boolean {
   if (xs.length != ys.length) {
     return false;
   }
@@ -121,4 +121,4 @@ export let arrayEqual = <T>(xs: Array<T>, ys: Array<T>): boolean => {
     }
   }
   return true;
-};
+}

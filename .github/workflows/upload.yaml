@@ -29,10 +29,10 @@ jobs:
 
       - run: yarn && yarn tsc
 
-      - run: target=node yarn webpack && node lib/bundle.js
+      - run: yarn bundle && node lib/bundle.js
         name: run in Node tests
 
-      - run: yarn webpack && cp assets/index.html lib/
+      - run: yarn bundle && cp assets/index.html lib/
         name: Build web assets
 
       - run: node lib/bundle.js

@@ -4,3 +4,5 @@ lib/
 
 nim/
 .vscode/
+
+js-out/
