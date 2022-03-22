@@ -2,13 +2,9 @@
   "name": "@calcit/ternary-tree",
   "version": "0.0.19-a1",
   "main": "./lib/index.mjs",
-  "scripts": {
-    "bundle": "esbuild src/main.mts --bundle --outfile=lib/bundle.js --platform=node --resolve-extensions=.mjs,.mts,.ts,.js"
-  },
+  "scripts": {},
   "devDependencies": {
-    "esbuild": "^0.14.27",
     "prettier": "^2.6.0",
-    "typescript": "^4.6.2",
-    "vite": "^2.8.6"
+    "typescript": "^4.6.2"
   }
 }
