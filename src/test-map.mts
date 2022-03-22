@@ -1,5 +1,5 @@
-import { hashGenerator } from "./types";
-import { test, check, cmp, deepEqual, justDisplay } from "./utils";
+import { hashGenerator } from "./types.mjs";
+import { test, check, cmp, deepEqual, justDisplay } from "./utils.mjs";
 import {
   initTernaryTreeMap,
   initTernaryTreeMapFromArray,
@@ -22,7 +22,7 @@ import {
   toPairsArray,
   mapMapValues,
   mapGetDefault,
-} from "./map";
+} from "./map.mjs";
 
 export let runMapTests = () => {
   test("init map", () => {

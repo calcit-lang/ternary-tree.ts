@@ -1,16 +1,15 @@
-.cache-loader
 .editorconfig
 .gitattributes
 .gitignore
 .prettierrc
 dist
-example
-template.ejs
 tsconfig.json
-webpack
 yarn.lock
 
 nim/
 .vscode/
-webpack.config.js
 .github/
+
+lib/bundle.js
+src
+assets/

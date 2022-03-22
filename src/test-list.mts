@@ -30,9 +30,9 @@ import {
   listEqual,
   indexToItems,
   listMapValues,
-} from "./list";
+} from "./list.mjs";
 
-import { test, check, arrayEqual, checkEqual } from "./utils";
+import { test, check, arrayEqual, checkEqual } from "./utils.mjs";
 
 export let runListTests = () => {
   test("init list", () => {

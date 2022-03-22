@@ -11,12 +11,12 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-          node-version: 12
+          node-version: 16
           registry-url: https://registry.npmjs.org/
 
       - run: yarn && yarn tsc -d
 
-      - run: target=node yarn webpack && node lib/bundle.js
+      - run: node lib/main.mjs
         name: run in Node tests
 
       - run: npm publish

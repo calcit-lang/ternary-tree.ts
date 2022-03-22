@@ -10,11 +10,12 @@
     "moduleResolution": "node",
     "module": "esnext",
     "target": "es2015",
-    "jsx": "react",
     "lib": ["es2016", "dom"],
     "types": [],
     "baseUrl": "./src/",
     "importsNotUsedAsValues": "preserve",
-    "plugins": []
-  }
+    "plugins": [],
+  },
+  "include": ["./src/*.mts"],
+  "exclude": ["lib"]
 }
