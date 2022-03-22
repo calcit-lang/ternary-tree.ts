@@ -1,14 +1,15 @@
-.cache-loader
 .editorconfig
 .gitattributes
 .gitignore
 .prettierrc
 dist
-example
-template.ejs
 tsconfig.json
 yarn.lock
 
 nim/
 .vscode/
 .github/
+
+lib/bundle.js
+src
+assets/
