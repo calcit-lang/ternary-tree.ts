@@ -1,6 +1,6 @@
 {
   "name": "@calcit/ternary-tree",
-  "version": "0.0.19-a1",
+  "version": "0.0.19",
   "main": "./lib/index.mjs",
   "scripts": {},
   "devDependencies": {
