@@ -98,10 +98,10 @@ export function initTernaryTreeList<T>(xs: Array<T>): TernaryTreeList<T> {
 
 // from a slice of an existed array
 export function initTernaryTreeListFromRange<T>(xs: Array<T>, from: number, to: number): TernaryTreeList<T> {
-  let ys = new Array<TernaryTreeList<T>>(xs.length);
+  let ys = new Array<TernaryTreeList<T>>(to - from);
   for (let idx = from; idx < to; idx++) {
     let x = xs[idx];
-    ys[idx] = { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: x };
+    ys[idx - from] = { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: x };
   }
   return makeTernaryTreeList(xs.length, 0, ys);
 }
