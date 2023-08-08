@@ -1,5 +1,6 @@
 import { hashGenerator } from "./types.mjs";
-import { test, check, cmp, deepEqual, justDisplay } from "./utils.mjs";
+import { cmp, deepEqual } from "./utils.mjs";
+import { test, check, justDisplay } from "./test-utils.mjs";
 import {
   initTernaryTreeMap,
   initTernaryTreeMapFromArray,
