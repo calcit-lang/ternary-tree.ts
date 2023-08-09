@@ -780,8 +780,8 @@ export function forceListInplaceBalancing<T>(tree: TernaryTreeList<T>): void {
 // TODO, need better strategy for detecting
 function maybeReblance<T>(tree: TernaryTreeList<T>): void {
   let currentDepth = getDepth(tree);
-  if (currentDepth > 50) {
-    if (roughIntPow(3, currentDepth - 50) > tree.size) {
+  if (currentDepth > 10) {
+    if (roughIntPow(3, currentDepth - 10) > tree.size) {
       forceListInplaceBalancing(tree);
     }
   }
@@ -813,10 +813,76 @@ export function append<T>(tree: TernaryTreeList<T>, item: T, disableBalancing: b
 
 export function concat<T>(...xsGroups: Array<TernaryTreeList<T>>): TernaryTreeList<T> {
   xsGroups = xsGroups.filter((xs) => listLen(xs) > 0);
+
+  if (xsGroups.length === 1) {
+    return xsGroups[0];
+  }
+
+  if (xsGroups.length === 2) {
+    return concat2(xsGroups[0], xsGroups[1]);
+  }
+  if (xsGroups.length === 3) {
+    return concat3(xsGroups[0], xsGroups[1], xsGroups[2]);
+  }
+
   let result = makeTernaryTreeList(xsGroups.length, 0, xsGroups);
   maybeReblance(result);
   checkListStructure(result);
   return result;
+}
+
+export function concat2<T>(left: TernaryTreeList<T>, middle: TernaryTreeList<T>): TernaryTreeList<T> {
+  if (left.kind === TernaryTreeKind.ternaryTreeBranch) {
+    if (left.left != null && left.middle != null && left.right == null) {
+      let ret: TernaryTreeListTheBranch<T> = {
+        size: left.size + middle.size,
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        depth: decideParentDepth(left.left, left.middle, middle),
+        left: left.left,
+        middle: left.middle,
+        right: middle,
+      };
+      return ret;
+    }
+  }
+  if (middle.kind === TernaryTreeKind.ternaryTreeBranch) {
+    if (middle.left != null && middle.middle != null && middle.right == null) {
+      let ret: TernaryTreeListTheBranch<T> = {
+        size: left.size + middle.size,
+        kind: TernaryTreeKind.ternaryTreeBranch,
+        depth: decideParentDepth(left, middle.left, middle.middle),
+        left: left,
+        middle: middle.left,
+        right: middle.middle,
+      };
+      return ret;
+    }
+  }
+  let ret: TernaryTreeListTheBranch<T> = {
+    size: left.size + middle.size,
+    kind: TernaryTreeKind.ternaryTreeBranch,
+    depth: decideParentDepth(left, middle),
+    left: left,
+    middle: middle,
+    right: emptyBranch,
+  };
+  checkListStructure(ret);
+  return ret;
+}
+
+export function concat3<T>(left: TernaryTreeList<T>, middle: TernaryTreeList<T>, right: TernaryTreeList<T>): TernaryTreeList<T> {
+  let ret: TernaryTreeListTheBranch<T> = {
+    size: left.size + middle.size + right.size,
+    kind: TernaryTreeKind.ternaryTreeBranch,
+    depth: decideParentDepth(left, middle, right),
+    left,
+    middle,
+    right,
+  };
+
+  checkListStructure(ret);
+
+  return ret;
 }
 
 export function sameListShape<T>(xs: TernaryTreeList<T>, ys: TernaryTreeList<T>): boolean {

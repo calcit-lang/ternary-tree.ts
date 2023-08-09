@@ -30,9 +30,10 @@ import {
   listEqual,
   indexToItems,
   listMapValues,
+  concat2,
 } from "./list.mjs";
 
-import { test, check, arrayEqual, checkEqual } from "./utils.mjs";
+import { test, check, arrayEqual, checkEqual } from "./test-utils.mjs";
 
 export let runListTests = () => {
   test("init list", () => {
@@ -131,7 +132,7 @@ export let runListTests = () => {
     let data3 = initTernaryTreeList([5, 6]);
     let data4 = initTernaryTreeList([7, 8]);
 
-    check(formatListInline(concat(data1, data2)) === "((1 2 _) (3 4 _) _)");
+    check(formatListInline(concat(data1, data2)) === "(1 2 (3 4 _))");
     check(formatListInline(concat(initTernaryTreeList<number>([]), data1)) === "(1 2 _)");
     check(formatListInline(concat(data1, data2, data3)) === "((1 2 _) (3 4 _) (5 6 _))");
     check(formatListInline(concat(data1, data2, data3, data4)) === "((1 2 _) ((3 4 _) (5 6 _) _) (7 8 _))");
@@ -279,5 +280,16 @@ export let runListTests = () => {
     check(listEqual(data1, data2));
     checkListStructure(data1);
     checkListStructure(data2);
+  });
+
+  test("concat loop", () => {
+    let data1 = initTernaryTreeList([3, 4]);
+    let data2 = initTernaryTreeList([5]);
+
+    for (let i = 0; i < 100; i++) {
+      data1 = concat2(data1, data2);
+    }
+
+    console.log("concat into depth", formatListInline(data1));
   });
 };

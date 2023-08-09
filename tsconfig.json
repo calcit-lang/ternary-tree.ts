@@ -11,7 +11,7 @@
     "module": "esnext",
     "target": "es2015",
     "lib": ["es2016", "dom"],
-    "types": [],
+    "types": ["node"],
     "baseUrl": "./src/",
     "verbatimModuleSyntax": false,
     "plugins": [],
