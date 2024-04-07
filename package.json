@@ -1,11 +1,11 @@
 {
   "name": "@calcit/ternary-tree",
-  "version": "0.0.23",
+  "version": "0.0.24",
   "main": "./lib/index.mjs",
   "scripts": {},
   "devDependencies": {
-    "@types/node": "^20.4.8",
-    "prettier": "^3.0.0",
-    "typescript": "^5.1.6"
+    "@types/node": "^20.12.5",
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.4"
   }
 }
