@@ -5,6 +5,9 @@ import { runListTests } from "./test-list.mjs";
 import { runMapTests } from "./test-map.mjs";
 import { mergeValueHash, overwriteHashGenerator, valueHash } from "./types.mjs";
 
+// import { disableListStructureCheck } from "./list.mjs";
+// disableListStructureCheck();
+
 overwriteComparator((x, y) => {
   // console.log("comparing", x, y);
   return deepEqual(x, y);

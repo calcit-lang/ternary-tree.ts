@@ -942,7 +942,17 @@ export function listEqual<T>(xs: TernaryTreeList<T>, ys: TernaryTreeList<T>): bo
   return true;
 }
 
+var skipListStructureCheck = false;
+
+/** in some cases we disable for performance */
+export let disableListStructureCheck = () => {
+  skipListStructureCheck = true;
+};
+
 export function checkListStructure<T>(tree: TernaryTreeList<T>): boolean {
+  if (skipListStructureCheck) {
+    return true;
+  }
   if (tree == null || listLen(tree) === 0) {
     return true;
   } else {
