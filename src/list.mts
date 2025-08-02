@@ -90,23 +90,25 @@ export function makeTernaryTreeList<T>(size: number, offset: number, xs: /* var 
 }
 
 export function initTernaryTreeList<T>(xs: Array<T>): TernaryTreeList<T> {
-  let ys = new Array<TernaryTreeList<T>>(xs.length);
-  let size = xs.length;
+  const size = xs.length;
+  let ys = new Array<TernaryTreeList<T>>(size);
+
+  // Use cached size instead of accessing xs.length repeatedly
   for (let idx = 0; idx < size; idx++) {
-    let x = xs[idx];
-    ys[idx] = { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: x };
+    ys[idx] = { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: xs[idx] };
   }
-  return makeTernaryTreeList(xs.length, 0, ys);
+  return makeTernaryTreeList(size, 0, ys);
 }
 
 // from a slice of an existed array
 export function initTernaryTreeListFromRange<T>(xs: Array<T>, from: number, to: number): TernaryTreeList<T> {
-  let ys = new Array<TernaryTreeList<T>>(to - from);
-  for (let idx = from; idx < to; idx++) {
-    let x = xs[idx];
-    ys[idx - from] = { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: x };
+  const length = to - from;
+  let ys = new Array<TernaryTreeList<T>>(length);
+
+  for (let idx = 0; idx < length; idx++) {
+    ys[idx] = { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: xs[idx + from] };
   }
-  return makeTernaryTreeList(ys.length, 0, ys);
+  return makeTernaryTreeList(length, 0, ys);
 }
 
 export function initEmptyTernaryTreeList<T>(): TernaryTreeList<T> {
@@ -154,18 +156,23 @@ export function* listToItems<T>(tree: TernaryTreeList<T>): Generator<T> {
         break;
       }
       case TernaryTreeKind.ternaryTreeBranch: {
-        if (tree.left != null) {
-          for (let x of listToItems(tree.left)) {
+        // Cache children to avoid repeated property access
+        const left = tree.left;
+        const middle = tree.middle;
+        const right = tree.right;
+
+        if (left != null) {
+          for (let x of listToItems(left)) {
             yield x;
           }
         }
-        if (tree.middle != null) {
-          for (let x of listToItems(tree.middle)) {
+        if (middle != null) {
+          for (let x of listToItems(middle)) {
             yield x;
           }
         }
-        if (tree.right != null) {
-          for (let x of listToItems(tree.right)) {
+        if (right != null) {
+          for (let x of listToItems(right)) {
             yield x;
           }
         }
@@ -219,17 +226,24 @@ export function indexOf<T>(tree: TernaryTreeList<T>, item: T): number {
     default:
       return -1;
     case TernaryTreeKind.ternaryTreeBranch:
-      let tryLeft = indexOf(tree.left, item);
+      // Cache children to avoid repeated property access
+      const left = tree.left;
+      const middle = tree.middle;
+      const right = tree.right;
+
+      let tryLeft = indexOf(left, item);
       if (tryLeft >= 0) {
         return tryLeft;
       }
-      let tryMiddle = indexOf(tree.middle, item);
+
+      let tryMiddle = indexOf(middle, item);
       if (tryMiddle >= 0) {
-        return tryMiddle + listLen(tree.left);
+        return tryMiddle + listLen(left);
       }
-      let tryRight = indexOf(tree.right, item);
+
+      let tryRight = indexOf(right, item);
       if (tryRight >= 0) {
-        return tryRight + listLen(tree.left) + listLen(tree.middle);
+        return tryRight + listLen(left) + listLen(middle);
       }
       return -1;
   }
@@ -241,24 +255,28 @@ function writeLeavesArray<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<Tern
   } else {
     switch (tree.kind) {
       case TernaryTreeKind.ternaryTreeLeaf: {
-        acc[idx.value] = tree;
-        idx.value = idx.value + 1;
+        // Cache current index to reduce property access
+        const currentIdx = idx.value;
+        acc[currentIdx] = tree;
+        idx.value = currentIdx + 1;
         break;
       }
       case TernaryTreeKind.ternaryTreeBranch: {
-        if (tree.left != null) {
-          writeLeavesArray(tree.left, acc, idx);
+        // Cache children to avoid repeated property access
+        const left = tree.left;
+        const middle = tree.middle;
+        const right = tree.right;
+
+        if (left != null) {
+          writeLeavesArray(left, acc, idx);
         }
-        if (tree.middle != null) {
-          writeLeavesArray(tree.middle, acc, idx);
+        if (middle != null) {
+          writeLeavesArray(middle, acc, idx);
         }
-        if (tree.right != null) {
-          writeLeavesArray(tree.right, acc, idx);
+        if (right != null) {
+          writeLeavesArray(right, acc, idx);
         }
         break;
-      }
-      default: {
-        throw new Error("Unknown");
       }
     }
   }
@@ -288,6 +306,7 @@ export function* listToPairs<T>(tree: TernaryTreeList<T>): Generator<[number, T]
 export function listGet<T>(originalTree: TernaryTreeList<T>, originalIdx: number): T {
   let tree = originalTree;
   let idx = originalIdx;
+
   while (tree != null) {
     if (idx < 0) {
       throw new Error("Cannot index negative number");
@@ -305,18 +324,23 @@ export function listGet<T>(originalTree: TernaryTreeList<T>, originalIdx: number
       throw new Error("Index too large");
     }
 
-    let leftSize = tree.left == null ? 0 : tree.left.size;
-    let middleSize = tree.middle == null ? 0 : tree.middle.size;
-    let rightSize = tree.right == null ? 0 : tree.right.size;
+    // Cache child sizes to avoid repeated property access
+    const left = tree.left;
+    const middle = tree.middle;
+    const right = tree.right;
+
+    const leftSize = left == null ? 0 : left.size;
+    const middleSize = middle == null ? 0 : middle.size;
+    const rightSize = right == null ? 0 : right.size;
 
     if (leftSize + middleSize + rightSize !== tree.size) {
       throw new Error("tree.size does not match sum case branch sizes");
     }
 
     if (idx <= leftSize - 1) {
-      tree = tree.left;
+      tree = left;
     } else if (idx <= leftSize + middleSize - 1) {
-      tree = tree.middle;
+      tree = middle;
       idx = idx - leftSize;
     } else {
       tree = tree.right;
@@ -1098,13 +1122,18 @@ export function listMapValues<T, V>(tree: TernaryTreeList<T>, f: (x: T) => V): T
       return result;
     }
     case TernaryTreeKind.ternaryTreeBranch: {
+      // Cache children to avoid repeated property access
+      const left = tree.left;
+      const middle = tree.middle;
+      const right = tree.right;
+
       let result: TernaryTreeList<V> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
         size: tree.size,
         depth: tree.depth,
-        left: tree.left == null ? emptyBranch : listMapValues(tree.left, f),
-        middle: tree.middle == null ? emptyBranch : listMapValues(tree.middle, f),
-        right: tree.right == null ? emptyBranch : listMapValues(tree.right, f),
+        left: left == null ? emptyBranch : listMapValues(left, f),
+        middle: middle == null ? emptyBranch : listMapValues(middle, f),
+        right: right == null ? emptyBranch : listMapValues(right, f),
       };
       return result;
     }

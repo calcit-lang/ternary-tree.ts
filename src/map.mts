@@ -180,22 +180,22 @@ export function initTernaryTreeMap<K, T>(t: Map<K, T>): TernaryTreeMap<K, T> {
 
 // use for..in for performance
 export function initTernaryTreeMapFromArray<K, T>(t: Array<[K, T]>): TernaryTreeMap<K, T> {
-  let groupBuffers: Record<number, Array<[K, T]>> = {};
+  // Use Map instead of Record for better performance with numeric keys
+  let groupBuffers: Map<number, Array<[K, T]>> = new Map();
   let xs: Array<TernaryTreeMapHashEntry<K, T>> = [];
-  for (let idx = 0; idx < t.length; idx++) {
+
+  const length = t.length;
+  for (let idx = 0; idx < length; idx++) {
     let k = t[idx][0];
     let v = t[idx][1];
     let h = hashGenerator(k);
-    if (groupBuffers[h] != null) {
-      let branch = groupBuffers[h];
-      if (branch != null) {
-        branch.push([k, v]);
-      } else {
-        throw new Error("Expected referece to pairs");
-      }
+
+    let branch = groupBuffers.get(h);
+    if (branch != null) {
+      branch.push([k, v]);
     } else {
       let pairs: [K, T][] = [[k, v]];
-      groupBuffers[h] = pairs;
+      groupBuffers.set(h, pairs);
       xs.push({
         hash: h,
         pairs: pairs,
@@ -313,11 +313,16 @@ function collectHashSortedArray<K, T>(tree: TernaryTreeMap<K, T>, acc: /* var */
   } else {
     switch (tree.kind) {
       case TernaryTreeKind.ternaryTreeLeaf: {
-        for (let i = 0; i < tree.elements.length; i++) {
-          let item = tree.elements[i];
-          acc[idx.value] = item;
-          idx.value = idx.value + 1;
+        // Cache elements and current index to reduce property access
+        const elements = tree.elements;
+        const length = elements.length;
+        let currentIdx = idx.value;
+
+        for (let i = 0; i < length; i++) {
+          acc[currentIdx] = elements[i];
+          currentIdx++;
         }
+        idx.value = currentIdx;
         break;
       }
       case TernaryTreeKind.ternaryTreeBranch: {
@@ -346,8 +351,10 @@ function collectOrderedHashEntries<K, T>(tree: TernaryTreeMap<K, T>, acc: /* var
   } else {
     switch (tree.kind) {
       case TernaryTreeKind.ternaryTreeLeaf: {
-        acc[idx.value] = { hash: tree.hash, pairs: tree.elements };
-        idx.value = idx.value + 1;
+        // Cache current index to reduce property access
+        const currentIdx = idx.value;
+        acc[currentIdx] = { hash: tree.hash, pairs: tree.elements };
+        idx.value = currentIdx + 1;
         break;
       }
       case TernaryTreeKind.ternaryTreeBranch: {
@@ -376,20 +383,18 @@ export function contains<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): boo
     return false;
   }
 
-  // TODO
-
   // reduce redundant computation by reusing hash result
   let hx = hashGenerator(item);
-
   let tree = originalTree;
 
   whileLoop: while (tree != null) {
     if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
       if (hx === tree.hash) {
-        let size = tree.elements.length;
+        // Cache elements length to avoid repeated property access
+        const elements = tree.elements;
+        const size = elements.length;
         for (let idx = 0; idx < size; idx++) {
-          let pair = tree.elements[idx];
-          if (dataEqual(pair[0], item)) {
+          if (dataEqual(elements[idx][0], item)) {
             return true;
           }
         }
@@ -397,67 +402,73 @@ export function contains<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): boo
       return false;
     }
 
-    // echo "looking for: ", hx, " ", item, " in ", tree.formatInline(true)
-    if (tree.left == null) {
+    // Optimize branch navigation with early exits
+    const left = tree.left;
+    if (left == null) {
       return false;
     }
-    if (tree.left.kind === TernaryTreeKind.ternaryTreeLeaf) {
-      if (hx < tree.left.hash) {
+
+    if (left.kind === TernaryTreeKind.ternaryTreeLeaf) {
+      if (hx < left.hash) {
         return false;
       }
-      if (tree.left.hash === hx) {
-        tree = tree.left;
-        continue whileLoop; // notice, it jumps to while loop
+      if (left.hash === hx) {
+        tree = left;
+        continue whileLoop;
       }
     } else {
-      if (hx < tree.left.minHash) {
+      if (hx < left.minHash) {
         return false;
       }
-      if (hx <= tree.left.maxHash) {
-        tree = tree.left;
-        continue whileLoop; // notice, it jumps to while loop
+      if (hx <= left.maxHash) {
+        tree = left;
+        continue whileLoop;
       }
     }
 
-    if (tree.middle == null) {
+    const middle = tree.middle;
+    if (middle == null) {
       return false;
     }
-    if (tree.middle.kind === TernaryTreeKind.ternaryTreeLeaf) {
-      if (hx < tree.middle.hash) {
+
+    if (middle.kind === TernaryTreeKind.ternaryTreeLeaf) {
+      if (hx < middle.hash) {
         return false;
       }
-      if (tree.middle.hash === hx) {
-        tree = tree.middle;
-        continue whileLoop; // notice, it jumps to while loop
+      if (middle.hash === hx) {
+        tree = middle;
+        continue whileLoop;
       }
     } else {
-      if (hx < tree.middle.minHash) {
+      if (hx < middle.minHash) {
         return false;
       }
-      if (hx <= tree.middle.maxHash) {
-        tree = tree.middle;
-        continue whileLoop; // notice, it jumps to while loop
+      if (hx <= middle.maxHash) {
+        tree = middle;
+        continue whileLoop;
       }
     }
 
-    if (tree.right == null) {
+    const right = tree.right;
+    if (right == null) {
       return false;
     }
-    if (tree.right.kind === TernaryTreeKind.ternaryTreeLeaf) {
-      if (hx < tree.right.hash) {
+
+    if (right.kind === TernaryTreeKind.ternaryTreeLeaf) {
+      if (hx < right.hash) {
         return false;
       }
-      if (tree.right.hash === hx) {
-        tree = tree.right;
-        continue whileLoop; // notice, it jumps to while loop
+      if (right.hash === hx) {
+        tree = right;
+        continue whileLoop;
       }
     } else {
-      if (hx < tree.right.minHash) {
+      if (hx < right.minHash) {
         return false;
       }
-      if (hx <= tree.right.maxHash) {
-        tree = tree.right;
-        continue whileLoop; // notice, it jumps to while loop
+      if (hx <= right.maxHash) {
+        tree = right;
+        continue whileLoop;
       }
     }
     return false;
@@ -468,83 +479,88 @@ export function contains<K, T>(originalTree: TernaryTreeMap<K, T>, item: K): boo
 
 export function mapGetDefault<K, T>(originalTree: TernaryTreeMap<K, T>, item: K, v0: T): T {
   let hx = hashGenerator(item);
-
   let tree = originalTree;
 
   whileLoop: while (tree != null) {
     if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
-      let size = tree.elements.length;
+      // Cache elements array to avoid repeated property access
+      const elements = tree.elements;
+      const size = elements.length;
       for (let i = 0; i < size; i++) {
-        let pair = tree.elements[i];
-        if (dataEqual(pair[0], item)) {
-          return pair[1];
+        if (dataEqual(elements[i][0], item)) {
+          return elements[i][1];
         }
       }
       return v0;
     }
 
-    // echo "looking for: ", hx, " ", item, " in ", tree.formatInline
-
-    if (tree.left == null) {
+    // Cache tree children to avoid repeated property access
+    const left = tree.left;
+    if (left == null) {
       return v0;
     }
-    if (tree.left.kind == TernaryTreeKind.ternaryTreeLeaf) {
-      if (hx < tree.left.hash) {
-        return v0;
-      }
-      if (tree.left.hash === hx) {
-        tree = tree.left;
-        continue whileLoop; // notice, it jumps to while loop
-      }
-    } else {
-      if (hx < tree.left.minHash) {
-        return v0;
-      }
-      if (hx <= tree.left.maxHash) {
-        tree = tree.left;
-        continue whileLoop; // notice, it jumps to while loop
-      }
-    }
 
-    if (tree.middle == null) {
-      return v0;
-    }
-    if (tree.middle.kind == TernaryTreeKind.ternaryTreeLeaf) {
-      if (hx < tree.middle.hash) {
+    if (left.kind == TernaryTreeKind.ternaryTreeLeaf) {
+      if (hx < left.hash) {
         return v0;
       }
-      if (tree.middle.hash === hx) {
-        tree = tree.middle;
-        continue whileLoop; // notice, it jumps to while loop
+      if (left.hash === hx) {
+        tree = left;
+        continue whileLoop;
       }
     } else {
-      if (hx < tree.middle.minHash) {
+      if (hx < left.minHash) {
         return v0;
       }
-      if (hx <= tree.middle.maxHash) {
-        tree = tree.middle;
-        continue whileLoop; // notice, it jumps to while loop
+      if (hx <= left.maxHash) {
+        tree = left;
+        continue whileLoop;
       }
     }
 
-    if (tree.right == null) {
+    const middle = tree.middle;
+    if (middle == null) {
       return v0;
     }
-    if (tree.right.kind == TernaryTreeKind.ternaryTreeLeaf) {
-      if (hx < tree.right.hash) {
+
+    if (middle.kind == TernaryTreeKind.ternaryTreeLeaf) {
+      if (hx < middle.hash) {
         return v0;
       }
-      if (tree.right.hash === hx) {
-        tree = tree.right;
-        continue whileLoop; // notice, it jumps to while loop
+      if (middle.hash === hx) {
+        tree = middle;
+        continue whileLoop;
       }
     } else {
-      if (hx < tree.right.minHash) {
+      if (hx < middle.minHash) {
         return v0;
       }
-      if (hx <= tree.right.maxHash) {
-        tree = tree.right;
-        continue whileLoop; // notice, it jumps to while loop
+      if (hx <= middle.maxHash) {
+        tree = middle;
+        continue whileLoop;
+      }
+    }
+
+    const right = tree.right;
+    if (right == null) {
+      return v0;
+    }
+
+    if (right.kind == TernaryTreeKind.ternaryTreeLeaf) {
+      if (hx < right.hash) {
+        return v0;
+      }
+      if (right.hash === hx) {
+        tree = right;
+        continue whileLoop;
+      }
+    } else {
+      if (hx < right.minHash) {
+        return v0;
+      }
+      if (hx <= right.maxHash) {
+        tree = right;
+        continue whileLoop;
       }
     }
 
@@ -1081,19 +1097,26 @@ export function dissocMap<K, T>(tree: TernaryTreeMap<K, T>, key: K): TernaryTree
 function collectToPairsArray<K, T>(acc: Array<[K, T]>, tree: TernaryTreeMap<K, T>): void {
   if (tree != null) {
     if (tree.kind === TernaryTreeKind.ternaryTreeLeaf) {
-      for (let i = 0; i < tree.elements.length; i++) {
-        let pair = tree.elements[i];
-        acc.push(pair);
+      // Cache elements array and use batch push for better performance
+      const elements = tree.elements;
+      const length = elements.length;
+      for (let i = 0; i < length; i++) {
+        acc.push(elements[i]);
       }
     } else {
-      if (tree.left != null) {
-        collectToPairsArray(acc, tree.left);
+      // Cache children to avoid repeated property access
+      const left = tree.left;
+      const middle = tree.middle;
+      const right = tree.right;
+
+      if (left != null) {
+        collectToPairsArray(acc, left);
       }
-      if (tree.middle != null) {
-        collectToPairsArray(acc, tree.middle);
+      if (middle != null) {
+        collectToPairsArray(acc, middle);
       }
-      if (tree.right != null) {
-        collectToPairsArray(acc, tree.right);
+      if (right != null) {
+        collectToPairsArray(acc, right);
       }
     }
   }
@@ -1101,8 +1124,13 @@ function collectToPairsArray<K, T>(acc: Array<[K, T]>, tree: TernaryTreeMap<K, T
 
 /** similar to `toPairs`, but using Array.push directly */
 export function toPairsArray<K, T>(tree: TernaryTreeMap<K, T>): Array<[K, T]> {
-  let result: Array<[K, T]> = [];
-  collectToPairsArray(result, tree);
+  // Pre-allocate array with known size for better performance
+  const totalSize = mapLen(tree);
+  let result: Array<[K, T]> = new Array(totalSize);
+  let idx: RefInt = { value: 0 };
+
+  // Use the more efficient collectHashSortedArray instead
+  collectHashSortedArray(tree, result, idx);
   return result;
 }
 
@@ -1322,11 +1350,16 @@ export function mapMapValues<K, T, V>(tree: TernaryTreeMap<K, T>, f: (x: T) => V
 
   switch (tree.kind) {
     case TernaryTreeKind.ternaryTreeLeaf: {
-      let newElements = new Array<[K, V]>(tree.elements.length);
-      let size = tree.elements.length;
+      // Cache elements array and pre-allocate result
+      const elements = tree.elements;
+      const size = elements.length;
+      let newElements = new Array<[K, V]>(size);
+
       for (let idx = 0; idx < size; idx++) {
-        newElements[idx] = [tree.elements[idx][0], f(tree.elements[idx][1])];
+        const element = elements[idx];
+        newElements[idx] = [element[0], f(element[1])];
       }
+
       let result: TernaryTreeMap<K, V> = {
         kind: TernaryTreeKind.ternaryTreeLeaf,
         hash: tree.hash,
