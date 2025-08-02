@@ -7,7 +7,9 @@
     "test": "yarn build && node lib/test.mjs",
     "test:watch": "yarn build && node lib/test.mjs",
     "test:list": "TARGET=list yarn test",
-    "test:map": "TARGET=map yarn test"
+    "test:map": "TARGET=map yarn test",
+    "test:list-perf": "yarn build && node lib/test-list-perf.mjs",
+    "test:list-detailed-perf": "yarn build && node lib/test-list-detailed-perf.mjs"
   },
   "devDependencies": {
     "@types/node": "^20.12.5",
