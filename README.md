@@ -40,7 +40,7 @@ function sameMapShape<K, T>(xs: TernaryTreeMap<K, T>, ys: TernaryTreeMap<K, T>):
 
 List functions:
 
-```ts
+````ts
 function makeTernaryTreeList<T>(size: number, offset: number, xs: /* var */ Array<TernaryTreeList<T>>): TernaryTreeList<T>;
 function initTernaryTreeList<T>(xs: Array<T>): TernaryTreeList<T>;
 function initEmptyTernaryTreeList<T>(): TernaryTreeList<T>;
@@ -75,9 +75,29 @@ function sameListShape<T>(xs: TernaryTreeList<T>, ys: TernaryTreeList<T>): boole
 function getDepth<T>(tree: TernaryTreeList<T>): number;
 function listToString<T>(tree: TernaryTreeList<T>): string;
 function formatListInline<T>(tree: TernaryTreeList<T>): string;
-function checkListStructure<T>(tree: TernaryTreeList<T>): boolean;
+function checkList
+
+### Development
+
+```bash
+# Install dependencies
+yarn install
+
+# Build TypeScript
+yarn build
+
+# Run all tests
+yarn test
+
+# Run specific test suites
+yarn test:list    # List-related tests only
+yarn test:map     # Map-related tests only
+````
+
+For detailed testing information, see [TESTING.md](./TESTING.md).Structure<T>(tree: TernaryTreeList<T>): boolean;
 function forceListInplaceBalancing<T>(tree: TernaryTreeList<T>): void;
-```
+
+````
 
 To overwrite internals behaviors:
 
@@ -85,7 +105,7 @@ To overwrite internals behaviors:
 overwriteHashGenerator(f);
 
 overwriteComparator(f);
-```
+````
 
 ### License
 

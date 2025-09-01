@@ -4,6 +4,7 @@ import "./test-map.mjs";
 import { runListTests } from "./test-list.mjs";
 import { runMapTests } from "./test-map.mjs";
 import { mergeValueHash, overwriteHashGenerator, valueHash } from "./types.mjs";
+import { printTestSummary } from "./test-utils.mjs";
 
 // import { disableListStructureCheck } from "./list.mjs";
 // disableListStructureCheck();
@@ -19,5 +20,9 @@ overwriteHashGenerator((x) => {
   return ret;
 });
 
+console.log("🧪 Running TernaryTree Tests...\n");
+
 runListTests();
 runMapTests();
+
+printTestSummary();

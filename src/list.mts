@@ -45,7 +45,7 @@ export function makeTernaryTreeList<T>(size: number, offset: number, xs: /* var 
       let middle = xs[offset + 1];
       let result: TernaryTreeList<T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
-        size: listLen(left) + listLen(middle),
+        size: left.size + middle.size,
         left: left,
         middle: middle,
         right: emptyBranch,
@@ -60,7 +60,7 @@ export function makeTernaryTreeList<T>(size: number, offset: number, xs: /* var 
       let right = xs[offset + 2];
       let result: TernaryTreeList<T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
-        size: listLen(left) + listLen(middle) + listLen(right),
+        size: left.size + middle.size + right.size,
         left: left,
         middle: middle,
         right: right,
@@ -77,7 +77,7 @@ export function makeTernaryTreeList<T>(size: number, offset: number, xs: /* var 
       let right = makeTernaryTreeList(divided.right, offset + divided.left + divided.middle, xs);
       let result: TernaryTreeList<T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
-        size: listLen(left) + listLen(middle) + listLen(right),
+        size: left.size + middle.size + right.size,
         depth: decideParentDepth(left, middle, right),
         left: left,
         middle: middle,
@@ -90,23 +90,25 @@ export function makeTernaryTreeList<T>(size: number, offset: number, xs: /* var 
 }
 
 export function initTernaryTreeList<T>(xs: Array<T>): TernaryTreeList<T> {
-  let ys = new Array<TernaryTreeList<T>>(xs.length);
-  let size = xs.length;
+  const size = xs.length;
+  let ys = new Array<TernaryTreeList<T>>(size);
+
+  // Use cached size instead of accessing xs.length repeatedly
   for (let idx = 0; idx < size; idx++) {
-    let x = xs[idx];
-    ys[idx] = { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: x };
+    ys[idx] = { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: xs[idx] };
   }
-  return makeTernaryTreeList(xs.length, 0, ys);
+  return makeTernaryTreeList(size, 0, ys);
 }
 
 // from a slice of an existed array
 export function initTernaryTreeListFromRange<T>(xs: Array<T>, from: number, to: number): TernaryTreeList<T> {
-  let ys = new Array<TernaryTreeList<T>>(to - from);
-  for (let idx = from; idx < to; idx++) {
-    let x = xs[idx];
-    ys[idx - from] = { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: x };
+  const length = to - from;
+  let ys = new Array<TernaryTreeList<T>>(length);
+
+  for (let idx = 0; idx < length; idx++) {
+    ys[idx] = { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: xs[idx + from] };
   }
-  return makeTernaryTreeList(ys.length, 0, ys);
+  return makeTernaryTreeList(length, 0, ys);
 }
 
 export function initEmptyTernaryTreeList<T>(): TernaryTreeList<T> {
@@ -154,18 +156,23 @@ export function* listToItems<T>(tree: TernaryTreeList<T>): Generator<T> {
         break;
       }
       case TernaryTreeKind.ternaryTreeBranch: {
-        if (tree.left != null) {
-          for (let x of listToItems(tree.left)) {
+        // Cache children to avoid repeated property access
+        const left = tree.left;
+        const middle = tree.middle;
+        const right = tree.right;
+
+        if (left != null) {
+          for (let x of listToItems(left)) {
             yield x;
           }
         }
-        if (tree.middle != null) {
-          for (let x of listToItems(tree.middle)) {
+        if (middle != null) {
+          for (let x of listToItems(middle)) {
             yield x;
           }
         }
-        if (tree.right != null) {
-          for (let x of listToItems(tree.right)) {
+        if (right != null) {
+          for (let x of listToItems(right)) {
             yield x;
           }
         }
@@ -189,17 +196,22 @@ export function findIndex<T>(tree: TernaryTreeList<T>, f: (x: T) => boolean): nu
       }
     }
     case TernaryTreeKind.ternaryTreeBranch: {
-      let tryLeft = findIndex(tree.left, f);
+      // Cache children to avoid repeated property access
+      const left = tree.left;
+      const middle = tree.middle;
+      const right = tree.right;
+
+      let tryLeft = findIndex(left, f);
       if (tryLeft >= 0) {
         return tryLeft;
       }
-      let tryMiddle = findIndex(tree.middle, f);
+      let tryMiddle = findIndex(middle, f);
       if (tryMiddle >= 0) {
-        return tryMiddle + listLen(tree.left);
+        return tryMiddle + (left == null ? 0 : left.size);
       }
-      let tryRight = findIndex(tree.right, f);
+      let tryRight = findIndex(right, f);
       if (tryRight >= 0) {
-        return tryRight + listLen(tree.left) + listLen(tree.middle);
+        return tryRight + (left == null ? 0 : left.size) + (middle == null ? 0 : middle.size);
       }
       return -1;
     }
@@ -219,17 +231,24 @@ export function indexOf<T>(tree: TernaryTreeList<T>, item: T): number {
     default:
       return -1;
     case TernaryTreeKind.ternaryTreeBranch:
-      let tryLeft = indexOf(tree.left, item);
+      // Cache children to avoid repeated property access
+      const left = tree.left;
+      const middle = tree.middle;
+      const right = tree.right;
+
+      let tryLeft = indexOf(left, item);
       if (tryLeft >= 0) {
         return tryLeft;
       }
-      let tryMiddle = indexOf(tree.middle, item);
+
+      let tryMiddle = indexOf(middle, item);
       if (tryMiddle >= 0) {
-        return tryMiddle + listLen(tree.left);
+        return tryMiddle + (left == null ? 0 : left.size);
       }
-      let tryRight = indexOf(tree.right, item);
+
+      let tryRight = indexOf(right, item);
       if (tryRight >= 0) {
-        return tryRight + listLen(tree.left) + listLen(tree.middle);
+        return tryRight + (left == null ? 0 : left.size) + (middle == null ? 0 : middle.size);
       }
       return -1;
   }
@@ -241,24 +260,28 @@ function writeLeavesArray<T>(tree: TernaryTreeList<T>, acc: /* var */ Array<Tern
   } else {
     switch (tree.kind) {
       case TernaryTreeKind.ternaryTreeLeaf: {
-        acc[idx.value] = tree;
-        idx.value = idx.value + 1;
+        // Cache current index to reduce property access
+        const currentIdx = idx.value;
+        acc[currentIdx] = tree;
+        idx.value = currentIdx + 1;
         break;
       }
       case TernaryTreeKind.ternaryTreeBranch: {
-        if (tree.left != null) {
-          writeLeavesArray(tree.left, acc, idx);
+        // Cache children to avoid repeated property access
+        const left = tree.left;
+        const middle = tree.middle;
+        const right = tree.right;
+
+        if (left != null) {
+          writeLeavesArray(left, acc, idx);
         }
-        if (tree.middle != null) {
-          writeLeavesArray(tree.middle, acc, idx);
+        if (middle != null) {
+          writeLeavesArray(middle, acc, idx);
         }
-        if (tree.right != null) {
-          writeLeavesArray(tree.right, acc, idx);
+        if (right != null) {
+          writeLeavesArray(right, acc, idx);
         }
         break;
-      }
-      default: {
-        throw new Error("Unknown");
       }
     }
   }
@@ -288,6 +311,7 @@ export function* listToPairs<T>(tree: TernaryTreeList<T>): Generator<[number, T]
 export function listGet<T>(originalTree: TernaryTreeList<T>, originalIdx: number): T {
   let tree = originalTree;
   let idx = originalIdx;
+
   while (tree != null) {
     if (idx < 0) {
       throw new Error("Cannot index negative number");
@@ -305,18 +329,23 @@ export function listGet<T>(originalTree: TernaryTreeList<T>, originalIdx: number
       throw new Error("Index too large");
     }
 
-    let leftSize = tree.left == null ? 0 : tree.left.size;
-    let middleSize = tree.middle == null ? 0 : tree.middle.size;
-    let rightSize = tree.right == null ? 0 : tree.right.size;
+    // Cache child sizes to avoid repeated property access
+    const left = tree.left;
+    const middle = tree.middle;
+    const right = tree.right;
+
+    const leftSize = left == null ? 0 : left.size;
+    const middleSize = middle == null ? 0 : middle.size;
+    const rightSize = right == null ? 0 : right.size;
 
     if (leftSize + middleSize + rightSize !== tree.size) {
       throw new Error("tree.size does not match sum case branch sizes");
     }
 
     if (idx <= leftSize - 1) {
-      tree = tree.left;
+      tree = left;
     } else if (idx <= leftSize + middleSize - 1) {
-      tree = tree.middle;
+      tree = middle;
       idx = idx - leftSize;
     } else {
       tree = tree.right;
@@ -359,44 +388,48 @@ export function assocList<T>(tree: TernaryTreeList<T>, idx: number, item: T): Te
     }
   }
 
-  let leftSize = listLen(tree.left);
-  let middleSize = listLen(tree.middle);
-  let rightSize = listLen(tree.right);
+  // Cache children and their sizes to avoid repeated property access
+  const left = tree.left;
+  const middle = tree.middle;
+  const right = tree.right;
+  const leftSize = left == null ? 0 : left.size;
+  const middleSize = middle == null ? 0 : middle.size;
+  const rightSize = right == null ? 0 : right.size;
 
   if (leftSize + middleSize + rightSize !== tree.size) throw new Error("tree.size does not match sum case branch sizes");
 
   if (idx <= leftSize - 1) {
-    let changedBranch = assocList(tree.left, idx, item);
+    let changedBranch = assocList(left, idx, item);
     let result: TernaryTreeList<T> = {
       kind: TernaryTreeKind.ternaryTreeBranch,
       size: tree.size,
-      depth: decideParentDepth(changedBranch, tree.middle, tree.right),
+      depth: decideParentDepth(changedBranch, middle, right),
       left: changedBranch,
-      middle: tree.middle,
-      right: tree.right,
+      middle: middle,
+      right: right,
     };
     checkListStructure(result);
     return result;
   } else if (idx <= leftSize + middleSize - 1) {
-    let changedBranch = assocList(tree.middle, idx - leftSize, item);
+    let changedBranch = assocList(middle, idx - leftSize, item);
     let result: TernaryTreeList<T> = {
       kind: TernaryTreeKind.ternaryTreeBranch,
       size: tree.size,
-      depth: decideParentDepth(tree.left, changedBranch, tree.right),
-      left: tree.left,
+      depth: decideParentDepth(left, changedBranch, right),
+      left: left,
       middle: changedBranch,
-      right: tree.right,
+      right: right,
     };
     checkListStructure(result);
     return result;
   } else {
-    let changedBranch = assocList(tree.right, idx - leftSize - middleSize, item);
+    let changedBranch = assocList(right, idx - leftSize - middleSize, item);
     let result: TernaryTreeList<T> = {
       kind: TernaryTreeKind.ternaryTreeBranch,
       size: tree.size,
-      depth: decideParentDepth(tree.left, tree.middle, changedBranch),
-      left: tree.left,
-      middle: tree.middle,
+      depth: decideParentDepth(left, middle, changedBranch),
+      left: left,
+      middle: middle,
       right: changedBranch,
     };
     checkListStructure(result);
@@ -429,9 +462,13 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
     throw new Error("dissoc should be handled at branches");
   }
 
-  let leftSize = listLen(tree.left);
-  let middleSize = listLen(tree.middle);
-  let rightSize = listLen(tree.right);
+  // Cache children and their sizes to avoid repeated property access
+  const left = tree.left;
+  const middle = tree.middle;
+  const right = tree.right;
+  const leftSize = left == null ? 0 : left.size;
+  const middleSize = middle == null ? 0 : middle.size;
+  const rightSize = right == null ? 0 : right.size;
 
   if (leftSize + middleSize + rightSize !== tree.size) {
     throw new Error("tree.size does not match sum from branch sizes");
@@ -440,58 +477,58 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
   let result: TernaryTreeList<T> = emptyBranch;
 
   if (idx <= leftSize - 1) {
-    let changedBranch = dissocList(tree.left, idx);
+    let changedBranch = dissocList(left, idx);
     if (changedBranch == null || changedBranch.size === 0) {
       result = {
         kind: TernaryTreeKind.ternaryTreeBranch,
         size: tree.size - 1,
-        depth: decideParentDepth(tree.middle, tree.right),
-        left: tree.middle,
-        middle: tree.right,
+        depth: decideParentDepth(middle, right),
+        left: middle,
+        middle: right,
         right: emptyBranch,
       };
     } else {
       result = {
         kind: TernaryTreeKind.ternaryTreeBranch,
         size: tree.size - 1,
-        depth: decideParentDepth(changedBranch, tree.middle, tree.right),
+        depth: decideParentDepth(changedBranch, middle, right),
         left: changedBranch,
-        middle: tree.middle,
-        right: tree.right,
+        middle: middle,
+        right: right,
       };
     }
   } else if (idx <= leftSize + middleSize - 1) {
-    let changedBranch = dissocList(tree.middle, idx - leftSize);
+    let changedBranch = dissocList(middle, idx - leftSize);
     if (changedBranch == null || changedBranch.size === 0) {
       result = {
         kind: TernaryTreeKind.ternaryTreeBranch,
         size: tree.size - 1,
-        depth: decideParentDepth(tree.left, changedBranch, tree.right),
-        left: tree.left,
-        middle: tree.right,
+        depth: decideParentDepth(left, changedBranch, right),
+        left: left,
+        middle: right,
         right: emptyBranch,
       };
     } else {
       result = {
         kind: TernaryTreeKind.ternaryTreeBranch,
         size: tree.size - 1,
-        depth: decideParentDepth(tree.left, changedBranch, tree.right),
-        left: tree.left,
+        depth: decideParentDepth(left, changedBranch, right),
+        left: left,
         middle: changedBranch,
-        right: tree.right,
+        right: right,
       };
     }
   } else {
-    let changedBranch = dissocList(tree.right, idx - leftSize - middleSize);
+    let changedBranch = dissocList(right, idx - leftSize - middleSize);
     if (changedBranch == null || changedBranch.size === 0) {
       changedBranch = emptyBranch;
     }
     result = {
       kind: TernaryTreeKind.ternaryTreeBranch,
       size: tree.size - 1,
-      depth: decideParentDepth(tree.left, tree.middle, changedBranch),
-      left: tree.left,
-      middle: tree.middle,
+      depth: decideParentDepth(left, middle, changedBranch),
+      left: left,
+      middle: middle,
       right: changedBranch,
     };
   }
@@ -644,9 +681,13 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
     }
   }
 
-  let leftSize = listLen(tree.left);
-  let middleSize = listLen(tree.middle);
-  let rightSize = listLen(tree.right);
+  // Cache children and their sizes to avoid repeated property access
+  const left = tree.left;
+  const middle = tree.middle;
+  const right = tree.right;
+  const leftSize = left == null ? 0 : left.size;
+  const middleSize = middle == null ? 0 : middle.size;
+  const rightSize = right == null ? 0 : right.size;
 
   if (leftSize + middleSize + rightSize !== tree.size) {
     throw new Error("tree.size does not match sum case branch sizes");
@@ -655,7 +696,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
   // echo "picking: ", idx, " ", leftSize, " ", middleSize, " ", rightSize
 
   if (idx === 0 && !after) {
-    if (listLen(tree.left) >= listLen(tree.middle) && listLen(tree.left) >= listLen(tree.right)) {
+    if (leftSize >= middleSize && leftSize >= rightSize) {
       let result: TernaryTreeList<T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
         size: tree.size + 1,
@@ -670,7 +711,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
   }
 
   if (idx === listLen(tree) - 1 && after) {
-    if (listLen(tree.right) >= listLen(tree.middle) && listLen(tree.right) >= listLen(tree.left)) {
+    if (rightSize >= middleSize && rightSize >= leftSize) {
       let result: TernaryTreeList<T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
         size: tree.size + 1,
@@ -703,49 +744,49 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
       size: tree.size + 1,
       depth: tree.depth,
       left: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
-      middle: tree.left,
-      right: tree.middle,
+      middle: left,
+      right: middle,
     };
     checkListStructure(result);
     return result;
   }
 
   if (idx <= leftSize - 1) {
-    let changedBranch = insert(tree.left, idx, item, after);
+    let changedBranch = insert(left, idx, item, after);
 
     let result: TernaryTreeList<T> = {
       kind: TernaryTreeKind.ternaryTreeBranch,
       size: tree.size + 1,
-      depth: decideParentDepth(changedBranch, tree.middle, tree.right),
+      depth: decideParentDepth(changedBranch, middle, right),
       left: changedBranch,
-      middle: tree.middle,
-      right: tree.right,
+      middle: middle,
+      right: right,
     };
     checkListStructure(result);
     return result;
   } else if (idx <= leftSize + middleSize - 1) {
-    let changedBranch = insert(tree.middle, idx - leftSize, item, after);
+    let changedBranch = insert(middle, idx - leftSize, item, after);
 
     let result: TernaryTreeList<T> = {
       kind: TernaryTreeKind.ternaryTreeBranch,
       size: tree.size + 1,
-      depth: decideParentDepth(tree.left, changedBranch, tree.right),
-      left: tree.left,
+      depth: decideParentDepth(left, changedBranch, right),
+      left: left,
       middle: changedBranch,
-      right: tree.right,
+      right: right,
     };
 
     checkListStructure(result);
     return result;
   } else {
-    let changedBranch = insert(tree.right, idx - leftSize - middleSize, item, after);
+    let changedBranch = insert(right, idx - leftSize - middleSize, item, after);
 
     let result: TernaryTreeList<T> = {
       kind: TernaryTreeKind.ternaryTreeBranch,
       size: tree.size + 1,
-      depth: decideParentDepth(tree.left, tree.middle, changedBranch),
-      left: tree.left,
-      middle: tree.middle,
+      depth: decideParentDepth(left, middle, changedBranch),
+      left: left,
+      middle: middle,
       right: changedBranch,
     };
     checkListStructure(result);
@@ -967,24 +1008,32 @@ export function checkListStructure<T>(tree: TernaryTreeList<T>): boolean {
           throw new Error(`Bad depth at branch ${formatListInline(tree)}`);
         }
 
-        if (tree.size !== listLen(tree.left) + listLen(tree.middle) + listLen(tree.right)) {
+        // Cache children and their sizes to avoid repeated property access
+        const left = tree.left;
+        const middle = tree.middle;
+        const right = tree.right;
+        const leftSize = left == null ? 0 : left.size;
+        const middleSize = middle == null ? 0 : middle.size;
+        const rightSize = right == null ? 0 : right.size;
+
+        if (tree.size !== leftSize + middleSize + rightSize) {
           throw new Error(`Bad size at branch ${formatListInline(tree)}`);
         }
-        if (tree.left == null && tree.middle != null) {
+        if (left == null && middle != null) {
           throw new Error("morformed tree");
         }
-        if (tree.middle == null && tree.right != null) {
+        if (middle == null && right != null) {
           throw new Error("morformed tree");
         }
 
-        if (tree.depth !== decideParentDepth(tree.left, tree.middle, tree.right)) {
-          let x = decideParentDepth(tree.left, tree.middle, tree.right);
+        if (tree.depth !== decideParentDepth(left, middle, right)) {
+          let x = decideParentDepth(left, middle, right);
           throw new Error(`Bad depth at branch ${formatListInline(tree)}`);
         }
 
-        checkListStructure(tree.left);
-        checkListStructure(tree.middle);
-        checkListStructure(tree.right);
+        checkListStructure(left);
+        checkListStructure(middle);
+        checkListStructure(right);
         break;
       }
     }
@@ -1020,38 +1069,42 @@ export function slice<T>(tree: TernaryTreeList<T>, startIdx: number, endIdx: num
     return tree;
   }
 
-  let leftSize = listLen(tree.left);
-  let middleSize = listLen(tree.middle);
-  let rightSize = listLen(tree.right);
+  // Cache children and their sizes to avoid repeated property access
+  const left = tree.left;
+  const middle = tree.middle;
+  const right = tree.right;
+  const leftSize = left == null ? 0 : left.size;
+  const middleSize = middle == null ? 0 : middle.size;
+  const rightSize = right == null ? 0 : right.size;
 
   // echo "sizes: {leftSize} {middleSize} {rightSize}"
 
   if (startIdx >= leftSize + middleSize) {
-    return slice(tree.right, startIdx - leftSize - middleSize, endIdx - leftSize - middleSize);
+    return slice(right, startIdx - leftSize - middleSize, endIdx - leftSize - middleSize);
   }
   if (startIdx >= leftSize)
     if (endIdx <= leftSize + middleSize) {
-      return slice(tree.middle, startIdx - leftSize, endIdx - leftSize);
+      return slice(middle, startIdx - leftSize, endIdx - leftSize);
     } else {
-      let middleCut = slice(tree.middle, startIdx - leftSize, middleSize);
-      let rightCut = slice(tree.right, 0, endIdx - leftSize - middleSize);
+      let middleCut = slice(middle, startIdx - leftSize, middleSize);
+      let rightCut = slice(right, 0, endIdx - leftSize - middleSize);
       return concat(middleCut, rightCut);
     }
 
   if (endIdx <= leftSize) {
-    return slice(tree.left, startIdx, endIdx);
+    return slice(left, startIdx, endIdx);
   }
 
   if (endIdx <= leftSize + middleSize) {
-    let leftCut = slice(tree.left, startIdx, leftSize);
-    let middleCut = slice(tree.middle, 0, endIdx - leftSize);
+    let leftCut = slice(left, startIdx, leftSize);
+    let middleCut = slice(middle, 0, endIdx - leftSize);
     return concat(leftCut, middleCut);
   }
 
   if (endIdx <= leftSize + middleSize + rightSize) {
-    let leftCut = slice(tree.left, startIdx, leftSize);
-    let rightCut = slice(tree.right, 0, endIdx - leftSize - middleSize);
-    return concat(concat(leftCut, tree.middle), rightCut);
+    let leftCut = slice(left, startIdx, leftSize);
+    let rightCut = slice(right, 0, endIdx - leftSize - middleSize);
+    return concat(concat(leftCut, middle), rightCut);
   }
   throw new Error("Unknown");
 }
@@ -1098,13 +1151,18 @@ export function listMapValues<T, V>(tree: TernaryTreeList<T>, f: (x: T) => V): T
       return result;
     }
     case TernaryTreeKind.ternaryTreeBranch: {
+      // Cache children to avoid repeated property access
+      const left = tree.left;
+      const middle = tree.middle;
+      const right = tree.right;
+
       let result: TernaryTreeList<V> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
         size: tree.size,
         depth: tree.depth,
-        left: tree.left == null ? emptyBranch : listMapValues(tree.left, f),
-        middle: tree.middle == null ? emptyBranch : listMapValues(tree.middle, f),
-        right: tree.right == null ? emptyBranch : listMapValues(tree.right, f),
+        left: left == null ? emptyBranch : listMapValues(left, f),
+        middle: middle == null ? emptyBranch : listMapValues(middle, f),
+        right: right == null ? emptyBranch : listMapValues(right, f),
       };
       return result;
     }

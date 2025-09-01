@@ -20,7 +20,7 @@ jobs:
 
       - run: yarn && yarn tsc
 
-      - run: node lib/main.mjs
+      - run: node lib/test.mjs
         name: run in Node tests
 
       - run: cp assets/index.html lib/

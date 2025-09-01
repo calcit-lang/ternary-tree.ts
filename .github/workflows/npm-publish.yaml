@@ -18,7 +18,7 @@ jobs:
 
       - run: yarn && yarn tsc -d
 
-      - run: node lib/main.mjs
+      - run: node lib/test.mjs
         name: run in Node tests
 
       - run: npm publish
