@@ -107,6 +107,7 @@ function makeTernaryTreeMap<K, T>(size: number, offset: number, xs: /* var */ Ar
         middle: createLeafFromHashEntry(middlePair),
         right: emptyBranch,
         depth: 2,
+        size: leftPair.pairs.length + middlePair.pairs.length,
       };
       return result;
     }
@@ -122,6 +123,7 @@ function makeTernaryTreeMap<K, T>(size: number, offset: number, xs: /* var */ Ar
         middle: createLeafFromHashEntry(middlePair),
         right: createLeafFromHashEntry(rightPair),
         depth: 2,
+        size: leftPair.pairs.length + middlePair.pairs.length + rightPair.pairs.length,
       };
       return result;
     }
@@ -145,6 +147,7 @@ function makeTernaryTreeMap<K, T>(size: number, offset: number, xs: /* var */ Ar
         middle: middle,
         right: right,
         depth: decideMapBranchDepth(left, middle, right),
+        size: mapLen(left) + mapLen(middle) + mapLen(right),
       };
       return result;
     }
@@ -243,7 +246,7 @@ export function mapLen<K, V>(tree: TernaryTreeMap<K, V>): number {
     case TernaryTreeKind.ternaryTreeLeaf:
       return tree.elements.length;
     case TernaryTreeKind.ternaryTreeBranch:
-      return mapLen(tree.left) + mapLen(tree.middle) + mapLen(tree.right); // TODO
+      return tree.size; // O(1) via cached size field
     default:
       throw new Error("Unknown");
   }
@@ -704,6 +707,7 @@ function assocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHas
       middle: tree.middle,
       right: tree.right,
       depth: decideMapBranchDepth(newLeft, tree.middle, tree.right),
+      size: tree.size,
     };
   }
 
@@ -720,6 +724,7 @@ function assocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHas
       middle: newMiddle,
       right: tree.right,
       depth: decideMapBranchDepth(tree.left, newMiddle, tree.right),
+      size: tree.size,
     };
   }
 
@@ -736,6 +741,7 @@ function assocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHas
       middle: tree.middle,
       right: newRight,
       depth: decideMapBranchDepth(tree.left, tree.middle, newRight),
+      size: tree.size,
     };
   }
   throw new Error("Unexpected missing hash in assoc, found not branch");
@@ -764,6 +770,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
         middle: childBranch,
         right: emptyBranch,
         depth: decideMapBranchDepth(tree, childBranch, emptyBranch),
+        size: mapLen(tree) + 1,
       };
       return result;
     } else if (thisHash < tree.hash) {
@@ -780,6 +787,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
         middle: tree,
         right: emptyBranch,
         depth: decideMapBranchDepth(childBranch, tree, emptyBranch),
+        size: mapLen(tree) + 1,
       };
       return result;
     } else {
@@ -819,6 +827,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
           middle: tree.left,
           right: tree.middle,
           depth: decideMapBranchDepth(childBranch, tree.left, tree.middle),
+          size: tree.size + 1,
         };
         return result;
       } else {
@@ -835,6 +844,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
           middle: tree,
           right: emptyBranch,
           depth: decideMapBranchDepth(childBranch, tree, emptyBranch),
+          size: tree.size + 1,
         };
         return result;
       }
@@ -856,6 +866,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
           middle: childBranch,
           right: emptyBranch,
           depth: decideMapBranchDepth(tree.left, childBranch, emptyBranch),
+          size: tree.size + 1,
         };
         return result;
       } else if (tree.right == null) {
@@ -872,6 +883,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
           middle: tree.middle,
           right: childBranch,
           depth: decideMapBranchDepth(tree.left, tree.middle, childBranch),
+          size: tree.size + 1,
         };
         return result;
       } else {
@@ -888,6 +900,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
           middle: childBranch,
           right: emptyBranch,
           depth: decideMapBranchDepth(tree, childBranch, emptyBranch),
+          size: tree.size + 1,
         };
 
         return result;
@@ -904,6 +917,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
         middle: tree.middle,
         right: tree.right,
         depth: decideMapBranchDepth(newLeft, tree.middle, tree.right),
+        size: tree.size + 1,
       };
     }
     if (rangeContainsHash(tree.middle, thisHash)) {
@@ -916,6 +930,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
         middle: newMiddle,
         right: tree.right,
         depth: decideMapBranchDepth(tree.left, newMiddle, tree.right),
+        size: tree.size + 1,
       };
     }
     if (rangeContainsHash(tree.right, thisHash)) {
@@ -928,6 +943,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
         middle: tree.middle,
         right: newRight,
         depth: decideMapBranchDepth(tree.left, tree.middle, newRight),
+        size: tree.size + 1,
       };
     }
 
@@ -944,6 +960,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
         middle: tree.middle,
         right: tree.right,
         depth: decideMapBranchDepth(newLeft, tree.middle, tree.right),
+        size: tree.size + 1,
       };
     } else {
       let newRight = assocNew(tree.right, key, item, thisHash);
@@ -955,6 +972,7 @@ function assocNew<K, T>(tree: TernaryTreeMap<K, T>, key: K, item: T, thisHash: H
         middle: tree.middle,
         right: newRight,
         depth: decideMapBranchDepth(tree.left, tree.middle, newRight),
+        size: tree.size + 1,
       };
     }
   }
@@ -1022,6 +1040,7 @@ function dissocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K): TernaryTreeMap
         middle: tree.right,
         right: emptyBranch,
         depth: decideMapBranchDepth(tree.middle, tree.right, emptyBranch),
+        size: tree.size - 1,
       };
       return result;
     } else {
@@ -1033,6 +1052,7 @@ function dissocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K): TernaryTreeMap
         middle: tree.middle,
         right: tree.right,
         depth: decideMapBranchDepth(changedBranch, tree.middle, tree.right),
+        size: tree.size - 1,
       };
       return result;
     }
@@ -1053,6 +1073,7 @@ function dissocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K): TernaryTreeMap
         middle: tree.right,
         right: emptyBranch,
         depth: decideMapBranchDepth(tree.left, tree.right, emptyBranch),
+        size: tree.size - 1,
       };
       return result;
     } else {
@@ -1064,6 +1085,7 @@ function dissocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K): TernaryTreeMap
         middle: changedBranch,
         right: tree.right,
         depth: decideMapBranchDepth(tree.left, changedBranch, tree.right),
+        size: tree.size - 1,
       };
       return result;
     }
@@ -1081,6 +1103,7 @@ function dissocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K): TernaryTreeMap
         middle: tree.middle,
         right: emptyBranch,
         depth: decideMapBranchDepth(tree.left, tree.middle, emptyBranch),
+        size: tree.size - 1,
       };
       return result;
     } else {
@@ -1092,6 +1115,7 @@ function dissocExisted<K, T>(tree: TernaryTreeMap<K, T>, key: K): TernaryTreeMap
         middle: tree.middle,
         right: changedBranch,
         depth: decideMapBranchDepth(tree.left, tree.middle, changedBranch),
+        size: tree.size - 1,
       };
       return result;
     }
@@ -1390,6 +1414,7 @@ export function mapMapValues<K, T, V>(tree: TernaryTreeMap<K, T>, f: (x: T) => V
         left: mapMapValues(tree.left, f),
         middle: mapMapValues(tree.middle, f),
         right: mapMapValues(tree.right, f),
+        size: tree.size,
       };
       return result;
     }
