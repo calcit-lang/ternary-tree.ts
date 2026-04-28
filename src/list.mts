@@ -503,7 +503,7 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
       result = {
         kind: TernaryTreeKind.ternaryTreeBranch,
         size: tree.size - 1,
-        depth: decideParentDepth(left, changedBranch, right),
+        depth: decideParentDepth(left, right, emptyBranch),
         left: left,
         middle: right,
         right: emptyBranch,
@@ -738,7 +738,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
     return result;
   }
 
-  if (!after && idx === 0 && rightSize === 0 && middleSize >= rightSize) {
+  if (!after && idx === 0 && rightSize === 0 && middleSize >= leftSize) {
     let result: TernaryTreeList<T> = {
       kind: TernaryTreeKind.ternaryTreeBranch,
       size: tree.size + 1,

@@ -12,8 +12,8 @@
     "test:list-detailed-perf": "yarn build && node lib/test-list-detailed-perf.mjs"
   },
   "devDependencies": {
-    "@types/node": "^20.12.5",
-    "prettier": "^3.2.5",
-    "typescript": "^5.4.4"
+    "@types/node": "*",
+    "prettier": "*",
+    "typescript": "*"
   }
 }
