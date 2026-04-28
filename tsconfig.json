@@ -15,6 +15,7 @@
     "types": ["node"],
     "ignoreDeprecations": "6.0",
     "verbatimModuleSyntax": false,
+    "declaration": true,
     "plugins": []
   },
   "include": ["./src/*.mts"],
