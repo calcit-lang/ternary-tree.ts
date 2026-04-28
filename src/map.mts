@@ -42,7 +42,6 @@ function getMin<K, V>(tree: TernaryTreeMap<K, V>): Hash {
 }
 
 export function getMapDepth<K, V>(tree: TernaryTreeMap<K, V>): number {
-  // console.log( "calling...", tree)
   if (tree == null) {
     return 0;
   }
@@ -50,7 +49,7 @@ export function getMapDepth<K, V>(tree: TernaryTreeMap<K, V>): number {
     case TernaryTreeKind.ternaryTreeLeaf:
       return 1;
     case TernaryTreeKind.ternaryTreeBranch:
-      return Math.max(getMapDepth(tree.left), getMapDepth(tree.middle), getMapDepth(tree.right)) + 1;
+      return tree.depth; // use cached depth — O(1)
     default:
       throw new Error("Unknown");
   }

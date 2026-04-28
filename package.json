@@ -9,7 +9,8 @@
     "test:list": "TARGET=list yarn test",
     "test:map": "TARGET=map yarn test",
     "test:list-perf": "yarn build && node lib/test-list-perf.mjs",
-    "test:list-detailed-perf": "yarn build && node lib/test-list-detailed-perf.mjs"
+    "test:list-detailed-perf": "yarn build && node lib/test-list-detailed-perf.mjs",
+    "bench": "tsc && node lib/bench.mjs"
   },
   "devDependencies": {
     "@types/node": "*",
