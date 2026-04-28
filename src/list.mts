@@ -28,16 +28,17 @@ let isEmptyBranch = (x: TernaryTreeList<any>) => {
   return x.size == 0;
 };
 
-function decideParentDepth<T>(...xs: Array<TernaryTreeList<T>>): number {
-  let depth = 0;
-  for (let i = 0; i < xs.length; i++) {
-    let x = xs[i];
-    let y = getDepth(x);
-    if (y > depth) {
-      depth = y;
-    }
+// Explicit 2/3-arg versions avoid rest-parameter array allocation on every call.
+// Inlining getDepth avoids indirect function calls in V8's lower JIT tiers.
+function decideParentDepth<T>(a: TernaryTreeList<T>, b: TernaryTreeList<T>, c?: TernaryTreeList<T>): number {
+  let da = a == null ? 0 : a.kind === TernaryTreeKind.ternaryTreeLeaf ? 1 : a.depth;
+  let db = b == null ? 0 : b.kind === TernaryTreeKind.ternaryTreeLeaf ? 1 : b.depth;
+  let d = da > db ? da : db;
+  if (c != null) {
+    let dc = c.kind === TernaryTreeKind.ternaryTreeLeaf ? 1 : c.depth;
+    if (dc > d) d = dc;
   }
-  return depth + 1;
+  return d + 1;
 }
 
 export function makeTernaryTreeList<T>(size: number, offset: number, xs: /* var */ Array<TernaryTreeList<T>>): TernaryTreeList<T> {
@@ -77,11 +78,16 @@ export function makeTernaryTreeList<T>(size: number, offset: number, xs: /* var 
       return result;
     }
     default: {
-      let divided = divideTernarySizes(size);
+      // Inline divideTernarySizes to avoid heap object allocation per recursive call
+      let extra = size % 3;
+      let groupSize = (size / 3) | 0;
+      let leftSize = groupSize + (extra === 2 ? 1 : 0);
+      let middleSize = groupSize + (extra === 1 ? 1 : 0);
+      let rightSize = groupSize + (extra === 2 ? 1 : 0);
 
-      let left = makeTernaryTreeList(divided.left, offset, xs);
-      let middle = makeTernaryTreeList(divided.middle, offset + divided.left, xs);
-      let right = makeTernaryTreeList(divided.right, offset + divided.left + divided.middle, xs);
+      let left = makeTernaryTreeList(leftSize, offset, xs);
+      let middle = makeTernaryTreeList(middleSize, offset + leftSize, xs);
+      let right = makeTernaryTreeList(rightSize, offset + leftSize + middleSize, xs);
       let result: TernaryTreeList<T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
         size: left.size + middle.size + right.size,
