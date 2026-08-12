@@ -1,19 +1,21 @@
 {
   "compilerOptions": {
     "outDir": "lib/",
+    "rootDir": "./src/",
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "sourceMap": false,
     "noImplicitAny": true,
     "noImplicitThis": true,
     "strictNullChecks": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "module": "esnext",
     "target": "es2015",
     "lib": ["es2016", "dom"],
     "types": ["node"],
-    "baseUrl": "./src/",
+    "ignoreDeprecations": "6.0",
     "verbatimModuleSyntax": false,
+    "declaration": true,
     "plugins": []
   },
   "include": ["./src/*.mts"],

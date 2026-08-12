@@ -1,6 +1,13 @@
 import { RefInt, TernaryTreeKind, TernaryTreeList, TernaryTreeListTheBranch } from "./types.mjs";
 import { dataEqual, divideTernarySizes, roughIntPow } from "./utils.mjs";
 
+// When false (default), internal structure checks are skipped for performance.
+// Set to true in development/testing to catch structural bugs early.
+let _devMode = false;
+export function enableStructureCheck(enabled = true) {
+  _devMode = enabled;
+}
+
 // just get, will not compute recursively
 export function getDepth<T>(tree: TernaryTreeList<T>): number {
   if (tree == null) return 0;
@@ -21,16 +28,17 @@ let isEmptyBranch = (x: TernaryTreeList<any>) => {
   return x.size == 0;
 };
 
-function decideParentDepth<T>(...xs: Array<TernaryTreeList<T>>): number {
-  let depth = 0;
-  for (let i = 0; i < xs.length; i++) {
-    let x = xs[i];
-    let y = getDepth(x);
-    if (y > depth) {
-      depth = y;
-    }
+// Explicit 2/3-arg versions avoid rest-parameter array allocation on every call.
+// Inlining getDepth avoids indirect function calls in V8's lower JIT tiers.
+function decideParentDepth<T>(a: TernaryTreeList<T>, b: TernaryTreeList<T>, c?: TernaryTreeList<T>): number {
+  let da = a == null ? 0 : a.kind === TernaryTreeKind.ternaryTreeLeaf ? 1 : a.depth;
+  let db = b == null ? 0 : b.kind === TernaryTreeKind.ternaryTreeLeaf ? 1 : b.depth;
+  let d = da > db ? da : db;
+  if (c != null) {
+    let dc = c.kind === TernaryTreeKind.ternaryTreeLeaf ? 1 : c.depth;
+    if (dc > d) d = dc;
   }
-  return depth + 1;
+  return d + 1;
 }
 
 export function makeTernaryTreeList<T>(size: number, offset: number, xs: /* var */ Array<TernaryTreeList<T>>): TernaryTreeList<T> {
@@ -51,7 +59,7 @@ export function makeTernaryTreeList<T>(size: number, offset: number, xs: /* var 
         right: emptyBranch,
         depth: decideParentDepth(left, middle),
       };
-      checkListStructure(result);
+      if (_devMode) checkListStructure(result);
       return result;
     }
     case 3: {
@@ -66,15 +74,20 @@ export function makeTernaryTreeList<T>(size: number, offset: number, xs: /* var 
         right: right,
         depth: decideParentDepth(left, middle, right),
       };
-      checkListStructure(result);
+      if (_devMode) checkListStructure(result);
       return result;
     }
     default: {
-      let divided = divideTernarySizes(size);
+      // Inline divideTernarySizes to avoid heap object allocation per recursive call
+      let extra = size % 3;
+      let groupSize = (size / 3) | 0;
+      let leftSize = groupSize + (extra === 2 ? 1 : 0);
+      let middleSize = groupSize + (extra === 1 ? 1 : 0);
+      let rightSize = groupSize + (extra === 2 ? 1 : 0);
 
-      let left = makeTernaryTreeList(divided.left, offset, xs);
-      let middle = makeTernaryTreeList(divided.middle, offset + divided.left, xs);
-      let right = makeTernaryTreeList(divided.right, offset + divided.left + divided.middle, xs);
+      let left = makeTernaryTreeList(leftSize, offset, xs);
+      let middle = makeTernaryTreeList(middleSize, offset + leftSize, xs);
+      let right = makeTernaryTreeList(rightSize, offset + leftSize + middleSize, xs);
       let result: TernaryTreeList<T> = {
         kind: TernaryTreeKind.ternaryTreeBranch,
         size: left.size + middle.size + right.size,
@@ -83,7 +96,7 @@ export function makeTernaryTreeList<T>(size: number, offset: number, xs: /* var 
         middle: middle,
         right: right,
       };
-      checkListStructure(result);
+      if (_devMode) checkListStructure(result);
       return result;
     }
   }
@@ -149,35 +162,20 @@ export function formatListInline<T>(tree: TernaryTreeList<T>): string {
 }
 
 export function* listToItems<T>(tree: TernaryTreeList<T>): Generator<T> {
-  if (tree != null) {
-    switch (tree.kind) {
-      case TernaryTreeKind.ternaryTreeLeaf: {
-        yield tree.value;
-        break;
-      }
-      case TernaryTreeKind.ternaryTreeBranch: {
-        // Cache children to avoid repeated property access
-        const left = tree.left;
-        const middle = tree.middle;
-        const right = tree.right;
-
-        if (left != null) {
-          for (let x of listToItems(left)) {
-            yield x;
-          }
-        }
-        if (middle != null) {
-          for (let x of listToItems(middle)) {
-            yield x;
-          }
-        }
-        if (right != null) {
-          for (let x of listToItems(right)) {
-            yield x;
-          }
-        }
-        break;
-      }
+  if (tree == null) return;
+  // Iterative pre-order traversal using an explicit stack — avoids
+  // O(n) nested generator delegation overhead of the recursive version.
+  let stack: TernaryTreeList<T>[] = [tree];
+  while (stack.length > 0) {
+    let node = stack.pop()!;
+    if (node == null || node.size === 0) continue;
+    if (node.kind === TernaryTreeKind.ternaryTreeLeaf) {
+      yield node.value;
+    } else {
+      // Push right first so left is popped (processed) first (LIFO order).
+      if (node.right != null && node.right.size > 0) stack.push(node.right);
+      if (node.middle != null && node.middle.size > 0) stack.push(node.middle);
+      if (node.left != null && node.left.size > 0) stack.push(node.left);
     }
   }
 }
@@ -338,7 +336,7 @@ export function listGet<T>(originalTree: TernaryTreeList<T>, originalIdx: number
     const middleSize = middle == null ? 0 : middle.size;
     const rightSize = right == null ? 0 : right.size;
 
-    if (leftSize + middleSize + rightSize !== tree.size) {
+    if (_devMode && leftSize + middleSize + rightSize !== tree.size) {
       throw new Error("tree.size does not match sum case branch sizes");
     }
 
@@ -396,7 +394,7 @@ export function assocList<T>(tree: TernaryTreeList<T>, idx: number, item: T): Te
   const middleSize = middle == null ? 0 : middle.size;
   const rightSize = right == null ? 0 : right.size;
 
-  if (leftSize + middleSize + rightSize !== tree.size) throw new Error("tree.size does not match sum case branch sizes");
+  if (_devMode && leftSize + middleSize + rightSize !== tree.size) throw new Error("tree.size does not match sum case branch sizes");
 
   if (idx <= leftSize - 1) {
     let changedBranch = assocList(left, idx, item);
@@ -408,7 +406,7 @@ export function assocList<T>(tree: TernaryTreeList<T>, idx: number, item: T): Te
       middle: middle,
       right: right,
     };
-    checkListStructure(result);
+    if (_devMode) checkListStructure(result);
     return result;
   } else if (idx <= leftSize + middleSize - 1) {
     let changedBranch = assocList(middle, idx - leftSize, item);
@@ -420,7 +418,7 @@ export function assocList<T>(tree: TernaryTreeList<T>, idx: number, item: T): Te
       middle: changedBranch,
       right: right,
     };
-    checkListStructure(result);
+    if (_devMode) checkListStructure(result);
     return result;
   } else {
     let changedBranch = assocList(right, idx - leftSize - middleSize, item);
@@ -432,7 +430,7 @@ export function assocList<T>(tree: TernaryTreeList<T>, idx: number, item: T): Te
       middle: middle,
       right: changedBranch,
     };
-    checkListStructure(result);
+    if (_devMode) checkListStructure(result);
     return result;
   }
 }
@@ -470,7 +468,7 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
   const middleSize = middle == null ? 0 : middle.size;
   const rightSize = right == null ? 0 : right.size;
 
-  if (leftSize + middleSize + rightSize !== tree.size) {
+  if (_devMode && leftSize + middleSize + rightSize !== tree.size) {
     throw new Error("tree.size does not match sum from branch sizes");
   }
 
@@ -503,7 +501,7 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
       result = {
         kind: TernaryTreeKind.ternaryTreeBranch,
         size: tree.size - 1,
-        depth: decideParentDepth(left, changedBranch, right),
+        depth: decideParentDepth(left, right, emptyBranch),
         left: left,
         middle: right,
         right: emptyBranch,
@@ -535,7 +533,7 @@ export function dissocList<T>(tree: TernaryTreeList<T>, idx: number): TernaryTre
   if (result.middle == null) {
     return result.left;
   }
-  checkListStructure(result);
+  if (_devMode) checkListStructure(result);
   return result;
 }
 
@@ -579,7 +577,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
         middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
         right: emptyBranch,
       };
-      checkListStructure(result);
+      if (_devMode) checkListStructure(result);
       return result;
     } else {
       let result: TernaryTreeList<T> = {
@@ -590,12 +588,12 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
         middle: tree,
         right: emptyBranch,
       };
-      checkListStructure(result);
+      if (_devMode) checkListStructure(result);
       return result;
     }
   }
 
-  checkListStructure(tree);
+  if (_devMode) checkListStructure(tree);
 
   if (listLen(tree) === 1) {
     if (after) {
@@ -608,7 +606,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
         middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
         right: emptyBranch,
       };
-      checkListStructure(result);
+      if (_devMode) checkListStructure(result);
       return result;
     } else {
       let result: TernaryTreeList<T> = {
@@ -619,7 +617,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
         middle: tree.left,
         right: emptyBranch,
       };
-      checkListStructure(result);
+      if (_devMode) checkListStructure(result);
       return result;
     }
   }
@@ -635,7 +633,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
           middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
           right: tree.middle,
         };
-        checkListStructure(result);
+        if (_devMode) checkListStructure(result);
         return result;
       }
       if (idx === 1) {
@@ -647,7 +645,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
           middle: tree.middle,
           right: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
         };
-        checkListStructure(result);
+        if (_devMode) checkListStructure(result);
         return result;
       } else {
         throw new Error("cannot insert after position 2 since only 2 elements here");
@@ -662,7 +660,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
           middle: tree.left,
           right: tree.middle,
         };
-        checkListStructure(result);
+        if (_devMode) checkListStructure(result);
         return result;
       } else if (idx === 1) {
         let result: TernaryTreeList<T> = {
@@ -673,7 +671,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
           middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
           right: tree.middle,
         };
-        checkListStructure(result);
+        if (_devMode) checkListStructure(result);
         return result;
       } else {
         throw new Error("cannot insert before position 2 since only 2 elements here");
@@ -689,7 +687,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
   const middleSize = middle == null ? 0 : middle.size;
   const rightSize = right == null ? 0 : right.size;
 
-  if (leftSize + middleSize + rightSize !== tree.size) {
+  if (_devMode && leftSize + middleSize + rightSize !== tree.size) {
     throw new Error("tree.size does not match sum case branch sizes");
   }
 
@@ -705,7 +703,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
         middle: tree,
         right: emptyBranch,
       };
-      checkListStructure(result);
+      if (_devMode) checkListStructure(result);
       return result;
     }
   }
@@ -720,7 +718,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
         middle: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
         right: emptyBranch,
       };
-      checkListStructure(result);
+      if (_devMode) checkListStructure(result);
       return result;
     }
   }
@@ -734,11 +732,11 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
       middle: tree.middle,
       right: { kind: TernaryTreeKind.ternaryTreeLeaf, size: 1, value: item } as TernaryTreeList<T>,
     };
-    checkListStructure(result);
+    if (_devMode) checkListStructure(result);
     return result;
   }
 
-  if (!after && idx === 0 && rightSize === 0 && middleSize >= rightSize) {
+  if (!after && idx === 0 && rightSize === 0 && middleSize >= leftSize) {
     let result: TernaryTreeList<T> = {
       kind: TernaryTreeKind.ternaryTreeBranch,
       size: tree.size + 1,
@@ -747,7 +745,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
       middle: left,
       right: middle,
     };
-    checkListStructure(result);
+    if (_devMode) checkListStructure(result);
     return result;
   }
 
@@ -762,7 +760,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
       middle: middle,
       right: right,
     };
-    checkListStructure(result);
+    if (_devMode) checkListStructure(result);
     return result;
   } else if (idx <= leftSize + middleSize - 1) {
     let changedBranch = insert(middle, idx - leftSize, item, after);
@@ -776,7 +774,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
       right: right,
     };
 
-    checkListStructure(result);
+    if (_devMode) checkListStructure(result);
     return result;
   } else {
     let changedBranch = insert(right, idx - leftSize - middleSize, item, after);
@@ -789,7 +787,7 @@ export function insert<T>(tree: TernaryTreeList<T>, idx: number, item: T, after:
       middle: middle,
       right: changedBranch,
     };
-    checkListStructure(result);
+    if (_devMode) checkListStructure(result);
     return result;
   }
 }
@@ -868,7 +866,7 @@ export function concat<T>(...xsGroups: Array<TernaryTreeList<T>>): TernaryTreeLi
 
   let result = makeTernaryTreeList(xsGroups.length, 0, xsGroups);
   maybeReblance(result);
-  checkListStructure(result);
+  if (_devMode) checkListStructure(result);
   return result;
 }
 
@@ -907,7 +905,7 @@ export function concat2<T>(left: TernaryTreeList<T>, middle: TernaryTreeList<T>)
     middle: middle,
     right: emptyBranch,
   };
-  checkListStructure(ret);
+  if (_devMode) checkListStructure(ret);
   return ret;
 }
 
@@ -921,7 +919,7 @@ export function concat3<T>(left: TernaryTreeList<T>, middle: TernaryTreeList<T>,
     right,
   };
 
-  checkListStructure(ret);
+  if (_devMode) checkListStructure(ret);
 
   return ret;
 }

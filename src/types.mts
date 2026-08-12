@@ -27,6 +27,7 @@ export type TernaryTreeMapHashEntry<K, V> = {
 
 export type TernaryTreeMapTheBranch<K, T> = {
   kind: TernaryTreeKind.ternaryTreeBranch;
+  size: number;
   depth: number;
   maxHash: number;
   minHash: number;
